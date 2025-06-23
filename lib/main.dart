@@ -13,7 +13,7 @@ Future<void>  main() async{
 
   SyncClient syncClient = Sync.client(
       objectbox.store,
-      'ws://127.0.0.1:9999',
+      'ws://10.0.0.2:9999',
       SyncCredentials.none()
   );
 
