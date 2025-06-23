@@ -4,6 +4,8 @@ import '../entities.dart';
 
 final projectBox = objectbox.store.box<Project>();
 
+Stream<List<Project>> get projectStream => projectBox.query().watch(triggerImmediately: true).map((q)=> q.find());
+
 class ProjectListScreen extends StatefulWidget {
   const ProjectListScreen({super.key});
 
@@ -33,8 +35,12 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                   onPressed: () {
                     String input = _controller.text;
                     final project = Project(name: input);
-                    projectBox.put(project);
-                    print('Saved input: $input');
+                    try{
+                      projectBox.put(project);
+                      print('Saved input: $input');
+                    }catch(e) {
+                      print("Error $e");
+                    }
                     Navigator.of(context).pop();
                   },
                   child: Text('SAVE'),
@@ -52,7 +58,25 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
         appBar: AppBar(title: const Text("Project list")),
         body: Column(
             children: [
-              // Expanded(child: ),
+              Expanded(child: StreamBuilder<List<Project>>(
+                stream: projectStream,
+                builder: (context, snapshot){
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(child: Text('No tasks found.'));
+                  }
+                  final projects = snapshot.data!;
+                  return ListView.builder(
+                    itemCount: projects.length,
+                    itemBuilder: (context, index) => ListTile(
+                      title: Text(projects[index].name),
+                    ),
+                  );
+                }
+              )),
               ElevatedButton(
                   onPressed: () => openAddProjectDialog(context),
                   child: Text("Add project")
