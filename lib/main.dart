@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:objectbox/objectbox.dart';
 import 'package:test_app/Screens/project_list_screen.dart';
@@ -11,9 +13,10 @@ Future<void>  main() async{
 
   objectbox = await ObjectBox.create();
 
+  var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
   SyncClient syncClient = Sync.client(
       objectbox.store,
-      'ws://10.0.0.2:9999',
+      'ws://$syncServerIp:9999',
       SyncCredentials.none()
   );
 

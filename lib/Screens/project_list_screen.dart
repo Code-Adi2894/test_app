@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
+import './tasks_list_screen.dart';
 
 final projectBox = objectbox.store.box<Project>();
 
@@ -25,6 +26,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
               content: TextField(
                 controller: _controller,
                 decoration: InputDecoration(hintText: "Add project name"),
+
               ),
               actions: [
                 TextButton(
@@ -54,6 +56,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    late Project selectedProject;
     return Scaffold(
         appBar: AppBar(title: const Text("Project list")),
         body: Column(
@@ -73,6 +76,13 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                     itemCount: projects.length,
                     itemBuilder: (context, index) => ListTile(
                       title: Text(projects[index].name),
+                        onTap: (){
+                          selectedProject = projects[index];
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => TasksListScreen(project: selectedProject))
+                          );
+                        }
                     ),
                   );
                 }
