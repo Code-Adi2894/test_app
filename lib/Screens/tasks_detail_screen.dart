@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import '../entities.dart';
+import '../main.dart';
+
+final taskBox = objectbox.store.box<Task>();
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -19,6 +22,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     super.initState();
     titleController = TextEditingController(text: widget.task.title);
     descriptionController = TextEditingController(text: widget.task.description);
+    isCompleted = widget.task.isCompleted;
   }
 
   @override
@@ -53,9 +57,32 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               child: Row(
                 children: [
                   const Text("Completed"),
-                  Checkbox(value: isCompleted, onChanged: null)
+                  Checkbox(
+                      value: isCompleted,
+                      onChanged: (bool? value){
+                        setState((){
+                          isCompleted = value ?? false;
+                        });
+                      }
+                  )
                 ]
               )
+          ),
+          Expanded(child: Container(),),
+          ElevatedButton(
+            onPressed: (){
+              widget.task.title = titleController.text;
+              widget.task.description = descriptionController.text;
+              widget.task.isCompleted = isCompleted;
+              try{
+                taskBox.put(widget.task);
+                Navigator.pop(context);
+                print("Updated task");
+              }catch(e){
+                print("Error: $e");
+              }
+            },
+            child: Text("Save changes")
           )
         ],
       )
