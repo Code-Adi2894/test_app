@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:test_app/Screens/task_list_dummy.dart';
+import '../Screens/tasks_detail_screen.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
@@ -20,77 +22,22 @@ class TasksListScreen extends StatefulWidget {
 }
 
 class _TasksListScreenState extends State<TasksListScreen> {
+  bool isCompleted = false;
 
   void openAddTaskDialog(BuildContext context) async {
     TextEditingController taskTitlecontroller = TextEditingController();
     TextEditingController taskDescriptioncontroller = TextEditingController();
-    bool isCompleted = false;
-
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-              title: Text("New task for ${widget.project.name}"),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    TextField(
-                      decoration: const InputDecoration(hintText: 'Add task title'),
-                      controller: taskTitlecontroller,
-                    ),
-                    TextField(
-                      decoration: const InputDecoration(hintText: 'Add task description'),
-                      controller: taskDescriptioncontroller
-                    ),
-                    Row(
-                      children: [
-                        Checkbox(value: isCompleted, onChanged: null),
-                        const Text("Completed")
-                      ],
-                    )
-                  ]
-                )
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: Text('CANCEL'),
-                ),
-                TextButton(
-                  onPressed: () {
-                    String taskTitle = taskTitlecontroller.text;
-                    String taskDescription = taskDescriptioncontroller.text;
-                    final task = Task(
-                        title: taskTitle,
-                        description: taskDescription,
-                        isCompleted: isCompleted,
-                    );
-                    try{
-                      task.project.target = widget.project;
-                      taskBox.put(task);
-                      print('Saved input: $taskTitle, $taskDescription, $isCompleted');
-                    }catch(e) {
-                      print("Error $e");
-                    }
-                    Navigator.of(context).pop();
-                  },
-                  child: Text('SAVE'),
-                ),
-
-              ]
-          );
-        }
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    late Task selectedTask;
     return Scaffold(
         appBar: AppBar(title: Text("Tasks list for ${widget.project.name}")),
         body: Column(
             children: [
-              Expanded(child: StreamBuilder<List<Task>>(
+              Expanded(
+                  child: StreamBuilder<List<Task>>(
                   stream: getTasksForProject(widget.project.id),
                   builder: (context, snapshot){
                     if (snapshot.connectionState == ConnectionState.waiting) {
@@ -105,12 +52,21 @@ class _TasksListScreenState extends State<TasksListScreen> {
                       itemCount: tasks.length,
                       itemBuilder: (context, index) => ListTile(
                         title: Text(tasks[index].title),
+                        onTap: (){
+                          selectedTask = tasks[index];
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder:
+                              (context) => TaskDetailScreen(task: selectedTask)
+                            )
+                          );
+                        }
                       ),
                     );
                   }
               )),
               ElevatedButton(
-                  onPressed: () => openAddTaskDialog(context),
+                  onPressed: () => showCustomDialog(context, widget.project),
                   child: Text("Add task")
               )
             ]
@@ -118,5 +74,6 @@ class _TasksListScreenState extends State<TasksListScreen> {
     );
   }
 }
+
 
 

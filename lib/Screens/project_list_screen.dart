@@ -16,7 +16,7 @@ class ProjectListScreen extends StatefulWidget {
 
 class _ProjectListScreenState extends State<ProjectListScreen> {
   void openAddProjectDialog(BuildContext context) async {
-    TextEditingController _controller = TextEditingController();
+    TextEditingController controller = TextEditingController();
 
     return showDialog(
         context: context,
@@ -24,9 +24,8 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
           return AlertDialog(
               title: Text("Add project"),
               content: TextField(
-                controller: _controller,
+                controller: controller,
                 decoration: InputDecoration(hintText: "Add project name"),
-
               ),
               actions: [
                 TextButton(
@@ -35,7 +34,7 @@ class _ProjectListScreenState extends State<ProjectListScreen> {
                 ),
                 TextButton(
                   onPressed: () {
-                    String input = _controller.text;
+                    String input = controller.text;
                     final project = Project(name: input);
                     try{
                       projectBox.put(project);
