@@ -22,6 +22,9 @@ class Cases {
   String? description;
   DateTime createdAt;
   DateTime updatedAt;
+  bool isSynced;
+  DateTime? lastSyncedAt;
+  String syncStatus; // 'pending', 'syncing', 'synced', 'failed'
 
   @Backlink()
   final tasks = ToMany<Task>();
@@ -32,6 +35,9 @@ class Cases {
     this.description,
     DateTime? createdAt,
     DateTime? updatedAt,
+    this.isSynced = false,
+    this.lastSyncedAt,
+    this.syncStatus = 'pending',
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 }

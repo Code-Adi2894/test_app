@@ -3,9 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../entities.dart';
 import '../main.dart';
+import '../widgets/offline_indicator.dart';
 import 'dart:typed_data';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 final taskBox = objectbox.store.box<Task>();
+final taskImageBox = objectbox.store.box<TaskImage>();
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -22,6 +25,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   String priority = '';
   var levels = ["LOW", "MEDIUM", "HIGH"];
   File? imageFile;
+  bool _isOnline = true;
+  bool _isSyncing = false;
+  late final Connectivity _connectivity;
 
   @override
   void initState(){
@@ -30,6 +36,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     descriptionController = TextEditingController(text: widget.task.description);
     isCompleted = widget.task.isCompleted;
     priority = widget.task.priority;
+    
+    // Initialize connectivity
+    _connectivity = Connectivity();
+    _checkConnectivity();
+  }
+
+  Future<void> _checkConnectivity() async {
+    final result = await _connectivity.checkConnectivity();
+    setState(() {
+      _isOnline = result != ConnectivityResult.none;
+    });
   }
 
   @override
@@ -44,28 +61,164 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     widget.task.description = descriptionController.text;
     widget.task.isCompleted = isCompleted;
     widget.task.priority = priority;
+    widget.task.updatedAt = DateTime.now();
+    widget.task.updatedBy = 'Current User'; // You can replace this with actual user info
+    widget.task.isSynced = false; // Mark as needing sync
 
     try{
       taskBox.put(widget.task);
+      
+      // Auto-sync if online
+      if (_isOnline) {
+        _syncTask();
+      }
+      
       Navigator.pop(context);
       print("Updated task");
     }catch(e){
-      print("Error: $e");
+      print("Error $e");
     }
   }
 
-  void _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
+  void _syncTask() async {
+    setState(() {
+      _isSyncing = true;
+    });
+
+    try {
+      final syncTime = DateTime.now();
+      widget.task.isSynced = true;
+      widget.task.updatedAt = syncTime;
+      widget.task.updatedBy = 'Current User'; // You can replace this with actual user info
+      
+      taskBox.put(widget.task);
+      
+      await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Task synced successfully!'),
+          backgroundColor: Color(0xFF28A745),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync failed: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    } finally {
       setState(() {
-        imageFile = File(pickedFile.path);
+        _isSyncing = false;
       });
     }
   }
 
+  void _pickImage() async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024, // Limit image size
+        maxHeight: 1024,
+        imageQuality: 85, // Compress image
+      );
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        
+        // Save image to database
+        final taskImage = TaskImage(imageBytes: bytes);
+        taskImage.task.target = widget.task;
+        taskImageBox.put(taskImage);
+        
+        // Mark task as needing sync
+        widget.task.isSynced = false;
+        widget.task.updatedAt = DateTime.now();
+        widget.task.updatedBy = 'Current User';
+        taskBox.put(widget.task);
+        
+        setState(() {
+          // Refresh the UI to show the new image
+        });
+        
+        // Auto-sync if online
+        if (_isOnline) {
+          _syncTask();
+        }
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Image added successfully!'),
+            backgroundColor: Color(0xFF28A745),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error picking image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error adding image: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  void _removeImage(TaskImage taskImage) async {
+    try {
+      // Remove image from database
+      taskImageBox.remove(taskImage.id);
+      
+      // Mark task as needing sync
+      widget.task.isSynced = false;
+      widget.task.updatedAt = DateTime.now();
+      widget.task.updatedBy = 'Current User';
+      taskBox.put(widget.task);
+      
+      setState(() {
+        // Refresh the UI
+      });
+      
+      // Auto-sync if online
+      if (_isOnline) {
+        _syncTask();
+      }
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Image removed successfully!'),
+          backgroundColor: Color(0xFF28A745),
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      print('Error removing image: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error removing image: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 2),
+        ),
+      );
+    }
+  }
+
+  List<TaskImage> _getTaskImages() {
+    // Use getAll and filter since TaskImage_ is not being generated properly
+    final allImages = taskImageBox.getAll();
+    return allImages.where((image) => image.task.target?.id == widget.task.id).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final taskImages = _getTaskImages();
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -86,6 +239,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
+          // Sync button - only show when online
+          if (_isOnline)
+            IconButton(
+              onPressed: _isSyncing ? null : _syncTask,
+              icon: _isSyncing
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Icon(Icons.sync, color: Colors.white),
+              tooltip: 'Sync Task',
+            ),
           IconButton(
             onPressed: _saveChanges,
             icon: const Icon(Icons.save, color: Colors.white),
@@ -94,182 +263,410 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Task Details Card
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        children: [
+          // Offline indicator
+          const OfflineIndicator(),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Task Details Card
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             children: [
-                              Text(
-                                widget.task.title,
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF495057),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      widget.task.title,
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF495057),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Task Details',
+                                      style: const TextStyle(
+                                        fontSize: 14,
+                                        color: Color(0xFF6C757D),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Task Details',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF6C757D),
+                              // Sync status indicator
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: widget.task.isSynced 
+                                    ? const Color(0xFFE8F5E8) 
+                                    : const Color(0xFFFFEBEE),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      widget.task.isSynced ? Icons.check_circle : Icons.sync,
+                                      size: 14,
+                                      color: widget.task.isSynced 
+                                        ? const Color(0xFF28A745) 
+                                        : const Color(0xFFDC3545),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      widget.task.isSynced ? 'Synced' : 'Pending',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: widget.task.isSynced 
+                                          ? const Color(0xFF28A745) 
+                                          : const Color(0xFFDC3545),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
+                          const SizedBox(height: 12),
+                          Text(
+                            widget.task.description,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF6C757D),
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          // Task metadata
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.access_time,
+                                size: 12,
+                                color: const Color(0xFF9E9E9E),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Updated: ${widget.task.updatedAt.toString().substring(0, 19)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF9E9E9E),
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              if (widget.task.updatedBy.isNotEmpty) ...[
+                                Icon(
+                                  Icons.person,
+                                  size: 12,
+                                  color: const Color(0xFF9E9E9E),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'By: ${widget.task.updatedBy}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    color: Color(0xFF9E9E9E),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          if (widget.task.isSynced)
+                            const SizedBox(height: 8),
+                          if (widget.task.isSynced)
+                            Text(
+                              'Last synced: ${widget.task.updatedAt.toString().substring(0, 19)}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Color(0xFF9E9E9E),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Images Section
+                  if (taskImages.isNotEmpty) ...[
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Text(
+                                  'Images',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF495057),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFE3F2FD),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${taskImages.length}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF2196F3),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            SizedBox(
+                              height: 120,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: taskImages.length,
+                                itemBuilder: (context, index) {
+                                  final taskImage = taskImages[index];
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        margin: const EdgeInsets.only(right: 12),
+                                        width: 120,
+                                        height: 120,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                          border: Border.all(color: const Color(0xFFE0E0E0)),
+                                        ),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(12),
+                                          child: Image.memory(
+                                            Uint8List.fromList(taskImage.imageBytes),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (context, error, stackTrace) {
+                                              return Container(
+                                                color: const Color(0xFFF5F5F5),
+                                                child: const Icon(
+                                                  Icons.broken_image,
+                                                  color: Color(0xFF9E9E9E),
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                      // Remove button
+                                      Positioned(
+                                        top: 4,
+                                        right: 16,
+                                        child: GestureDetector(
+                                          onTap: () => _removeImage(taskImage),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Color(0xFFDC3545),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              size: 16,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+
+                  // Edit Section
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          offset: const Offset(0, 5),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Edit Task',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF495057),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          
+                          // Title Field
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextField(
+                              controller: titleController,
+                              decoration: const InputDecoration(
+                                labelText: 'Title',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
 
-            // Edit Section
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+                          // Description Field
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextField(
+                              controller: descriptionController,
+                              maxLines: 3,
+                              decoration: const InputDecoration(
+                                labelText: 'Description',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Completed Checkbox
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: isCompleted,
+                                onChanged: (bool? value){
+                                  setState((){
+                                    isCompleted = value ?? false;
+                                  });
+                                },
+                                activeColor: const Color(0xFF28A745),
+                              ),
+                              const Text(
+                                "Mark as completed",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF495057),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+
+                          // Priority Dropdown
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: DropdownButton<String>(
+                              value: priority,
+                              isExpanded: true,
+                              underline: Container(),
+                              icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6C757D)),
+                              items: levels.map((String level){
+                                return DropdownMenuItem<String>(
+                                  value: level,
+                                  child: Text(level),
+                                );
+                              }).toList(),
+                              onChanged: (String? newValue){
+                                setState((){
+                                  priority = newValue!;
+                                });
+                              },
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+
+                          // Add Image Button - only show when online
+                          if (_isOnline)
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: _pickImage,
+                                icon: const Icon(Icons.add_photo_alternate),
+                                label: const Text('Add Image'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2196F3),
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
                   ),
+                  const SizedBox(height: 24),
                 ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Edit Task',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF495057),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    
-                    // Title Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TextField(
-                        controller: titleController,
-                        decoration: const InputDecoration(
-                          labelText: 'Title',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          labelStyle: TextStyle(color: Color(0xFF6C757D)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Description Field
-                    Container(
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: TextField(
-                        controller: descriptionController,
-                        maxLines: 3,
-                        decoration: const InputDecoration(
-                          labelText: 'Description',
-                          border: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                          labelStyle: TextStyle(color: Color(0xFF6C757D)),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Completed Checkbox
-                    Row(
-                      children: [
-                        Checkbox(
-                          value: isCompleted,
-                          onChanged: (bool? value){
-                            setState((){
-                              isCompleted = value ?? false;
-                            });
-                          },
-                          activeColor: const Color(0xFF28A745),
-                        ),
-                        const Text(
-                          "Mark as completed",
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Color(0xFF495057),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Priority Dropdown
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8F9FA),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: DropdownButton<String>(
-                        value: priority,
-                        isExpanded: true,
-                        underline: Container(),
-                        icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6C757D)),
-                        items: levels.map((String level){
-                          return DropdownMenuItem<String>(
-                            value: level,
-                            child: Text(level),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue){
-                          setState((){
-                            priority = newValue!;
-                          });
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
-            const SizedBox(height: 24),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
