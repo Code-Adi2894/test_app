@@ -16,6 +16,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
   bool isCompleted = false;
+  String priority = '';
+  var levels = ["LOW", "MEDIUM", "HIGH"];
 
   @override
   void initState(){
@@ -23,6 +25,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     titleController = TextEditingController(text: widget.task.title);
     descriptionController = TextEditingController(text: widget.task.description);
     isCompleted = widget.task.isCompleted;
+    priority = widget.task.priority;
   }
 
   @override
@@ -68,12 +71,31 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 ]
               )
           ),
+          Padding(
+              padding: EdgeInsets.all(16.0),
+              child: DropdownButton(
+                  value: priority,
+                  icon: const Icon(Icons.keyboard_arrow_down),
+                  items: levels.map((String level){
+                    return DropdownMenuItem<String>(
+                      value: level,
+                      child: Text(level),
+                    );
+                  }).toList(),
+                  onChanged: (String? newValue){
+                    setState((){
+                      priority = newValue!;
+                    });
+                  }
+              )
+          ),
           Expanded(child: Container(),),
           ElevatedButton(
             onPressed: (){
               widget.task.title = titleController.text;
               widget.task.description = descriptionController.text;
               widget.task.isCompleted = isCompleted;
+              widget.task.priority = priority;
               try{
                 taskBox.put(widget.task);
                 Navigator.pop(context);

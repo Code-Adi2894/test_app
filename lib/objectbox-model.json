@@ -4,19 +4,19 @@
   "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
   "entities": [
     {
-      "id": "1:6888122594927482268",
-      "lastPropertyId": "2:2600683127549728224",
+      "id": "1:4586248237007907258",
+      "lastPropertyId": "2:4565180862407038464",
       "name": "Project",
       "flags": 2,
       "properties": [
         {
-          "id": "1:2350982328502953455",
+          "id": "1:5338282227961137775",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:2600683127549728224",
+          "id": "2:4565180862407038464",
           "name": "name",
           "type": 9
         }
@@ -24,46 +24,51 @@
       "relations": []
     },
     {
-      "id": "2:1021305815257547826",
-      "lastPropertyId": "5:2455223143245922963",
+      "id": "2:2166071371638146430",
+      "lastPropertyId": "6:6463368824846576933",
       "name": "Task",
       "flags": 2,
       "properties": [
         {
-          "id": "1:3808429478237226634",
+          "id": "1:5438403364332432677",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:6749552232227023161",
+          "id": "2:4691259114376190203",
           "name": "title",
           "type": 9
         },
         {
-          "id": "3:3206823206900650561",
+          "id": "3:6786321433711601981",
           "name": "description",
           "type": 9
         },
         {
-          "id": "4:7607237665815116451",
+          "id": "4:7375566084544407708",
           "name": "isCompleted",
           "type": 1
         },
         {
-          "id": "5:2455223143245922963",
+          "id": "5:2705602480657851208",
+          "name": "priority",
+          "type": 9
+        },
+        {
+          "id": "6:6463368824846576933",
           "name": "projectId",
           "type": 11,
           "flags": 520,
-          "indexId": "1:867412345451564601",
+          "indexId": "1:3959085063464020899",
           "relationTarget": "Project"
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "2:1021305815257547826",
-  "lastIndexId": "1:867412345451564601",
+  "lastEntityId": "2:2166071371638146430",
+  "lastIndexId": "1:3959085063464020899",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

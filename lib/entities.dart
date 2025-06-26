@@ -22,6 +22,7 @@ class Task {
   String title;
   String description;
   bool isCompleted;
+  String priority;
 
   final project = ToOne<Project>();
 
@@ -29,6 +30,7 @@ class Task {
     this.id = 0,
     required this.title,
     required this.description,
-    this.isCompleted = false
+    this.isCompleted = false,
+    this.priority = "LOW"
   });
 }

@@ -8,7 +8,8 @@ void showCustomDialog(BuildContext context, Project project) {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   bool isCompleted = false;
-
+  String priority = "LOW";
+  var levels = ["LOW", "MEDIUM", "HIGH"];
 
   showDialog(
     context: context,
@@ -42,6 +43,21 @@ void showCustomDialog(BuildContext context, Project project) {
                       const Text('Completed'),
                     ],
                   ),
+                  DropdownButton(
+                      value: priority,
+                      icon: const Icon(Icons.keyboard_arrow_down),
+                      items: levels.map((String level){
+                        return DropdownMenuItem<String>(
+                          value: level,
+                          child: Text(level),
+                        );
+                      }).toList(),
+                      onChanged: (String? newValue){
+                        setState((){
+                          priority = newValue!;
+                        });
+                      }
+                  )
                 ],
               ),
             ),
@@ -54,7 +70,7 @@ void showCustomDialog(BuildContext context, Project project) {
                 onPressed: () {
                   final title = titleController.text;
                   final description = descriptionController.text;
-                  final task = Task(title: title, description: description, isCompleted: isCompleted);
+                  final task = Task(title: title, description: description, isCompleted: isCompleted, priority: priority);
                   try{
                     task.project.target = project;
                     taskBox.put(task);
