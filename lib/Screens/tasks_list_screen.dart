@@ -7,15 +7,15 @@ import '../objectbox.g.dart';
 
 final taskBox = objectbox.store.box<Task>();
 
-Stream<List<Task>> getTasksForProject(int projectId){
-  final query = taskBox.query(Task_.project.equals(projectId)).watch(triggerImmediately: true);
+Stream<List<Task>> getTasksForCase(int caseId){
+  final query = taskBox.query(Task_.cases.equals(caseId)).watch(triggerImmediately: true);
   return query.map((query) => query.find());
 }
 
 class TasksListScreen extends StatefulWidget {
 
-  final Project project;
-  const TasksListScreen({super.key, required this.project});
+  final Cases case_;
+  const TasksListScreen({super.key, required this.case_});
 
   @override
   State<TasksListScreen> createState() => _TasksListScreenState();
@@ -33,12 +33,12 @@ class _TasksListScreenState extends State<TasksListScreen> {
   Widget build(BuildContext context) {
     late Task selectedTask;
     return Scaffold(
-        appBar: AppBar(title: Text("Tasks list for ${widget.project.name}")),
+        appBar: AppBar(title: Text("Tasks list for ${widget.case_.name}")),
         body: Column(
             children: [
               Expanded(
                   child: StreamBuilder<List<Task>>(
-                  stream: getTasksForProject(widget.project.id),
+                  stream: getTasksForCase(widget.case_.id),
                   builder: (context, snapshot){
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
@@ -66,7 +66,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
                   }
               )),
               ElevatedButton(
-                  onPressed: () => showCustomDialog(context, widget.project),
+                  onPressed: () => showCustomDialog(context, widget.case_),
                   child: Text("Add task")
               )
             ]

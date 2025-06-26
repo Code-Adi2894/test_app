@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:objectbox/objectbox.dart';
-import 'package:test_app/Screens/project_list_screen.dart';
+import 'package:test_app/Screens/login_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'objectbox.dart';
 
@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: ProjectListScreen(),
+      home: LoginScreen(),
     );
   }
 }

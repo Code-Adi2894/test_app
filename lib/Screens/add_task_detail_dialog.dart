@@ -9,7 +9,7 @@ import 'package:image_picker/image_picker.dart';
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();
 
-void showCustomDialog(BuildContext context, Project project) {
+void showCustomDialog(BuildContext context, Cases case_) {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   bool isCompleted = false;
@@ -96,7 +96,7 @@ void showCustomDialog(BuildContext context, Project project) {
                   final task = Task(title: title, description: description, isCompleted: isCompleted, priority: priority);
 
                   try {
-                    task.project.target = project;
+                    task.cases.target = case_;
                     taskBox.put(task);
                     for(final bytes in selectedImages){
                       final taskImage = TaskImage(imageBytes: bytes);

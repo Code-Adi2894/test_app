@@ -20,21 +20,39 @@ export 'package:objectbox/objectbox.dart'; // so that callers only have to impor
 
 final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(1, 6794400836192872297),
-    name: 'Project',
-    lastPropertyId: const obx_int.IdUid(2, 2385285082412069306),
+    id: const obx_int.IdUid(1, 4928506080943321365),
+    name: 'Cases',
+    lastPropertyId: const obx_int.IdUid(5, 988562953783482796),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 58889050677478285),
+        id: const obx_int.IdUid(1, 3270234421556566351),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 2385285082412069306),
+        id: const obx_int.IdUid(2, 1544682226278838351),
         name: 'name',
         type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 7505108567032546123),
+        name: 'description',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(4, 4714504161677148253),
+        name: 'createdAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 988562953783482796),
+        name: 'updatedAt',
+        type: 10,
         flags: 0,
       ),
     ],
@@ -44,84 +62,136 @@ final _entities = <obx_int.ModelEntity>[
     ],
   ),
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(2, 5163393374740872442),
+    id: const obx_int.IdUid(2, 7303830116752376038),
     name: 'Task',
-    lastPropertyId: const obx_int.IdUid(6, 6707316671868555083),
+    lastPropertyId: const obx_int.IdUid(11, 3797033478096565118),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 188744288653409619),
+        id: const obx_int.IdUid(1, 3566904362829741038),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 3486102509344387158),
+        id: const obx_int.IdUid(2, 199392358065594273),
         name: 'title',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 3250703588374377764),
+        id: const obx_int.IdUid(3, 5331862787313707698),
         name: 'description',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 5885532560597471229),
+        id: const obx_int.IdUid(4, 3685568447503670687),
+        name: 'image',
+        type: 27,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(5, 686432918972397697),
         name: 'isCompleted',
         type: 1,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(5, 2836230617580419348),
+        id: const obx_int.IdUid(6, 2478158423680019983),
+        name: 'isSynced',
+        type: 1,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(7, 3056334775967883969),
         name: 'priority',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(6, 6707316671868555083),
-        name: 'projectId',
+        id: const obx_int.IdUid(8, 5683471673077875272),
+        name: 'reviewNotes',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(9, 840213970365776684),
+        name: 'updatedAt',
+        type: 10,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(10, 6664169112017085806),
+        name: 'updatedBy',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(11, 3797033478096565118),
+        name: 'casesId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(1, 8805263474178088887),
-        relationTarget: 'Project',
+        indexId: const obx_int.IdUid(1, 4495191334989471266),
+        relationTarget: 'Cases',
       ),
     ],
     relations: <obx_int.ModelRelation>[],
-    backlinks: <obx_int.ModelBacklink>[
-      obx_int.ModelBacklink(
-        name: 'images',
-        srcEntity: 'TaskImage',
-        srcField: 'task',
-      ),
-    ],
+    backlinks: <obx_int.ModelBacklink>[],
   ),
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(3, 589978183497695498),
+    id: const obx_int.IdUid(3, 4365900320187002626),
     name: 'TaskImage',
-    lastPropertyId: const obx_int.IdUid(3, 9021886289986744184),
+    lastPropertyId: const obx_int.IdUid(3, 458568116549610803),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 130793918457884233),
+        id: const obx_int.IdUid(1, 5061345639218495751),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 369819727757058807),
+        id: const obx_int.IdUid(2, 3705254952129675370),
         name: 'imageBytes',
         type: 23,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 9021886289986744184),
+        id: const obx_int.IdUid(3, 458568116549610803),
         name: 'taskId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(2, 7930975302100794258),
+        indexId: const obx_int.IdUid(2, 2401339953831432676),
         relationTarget: 'Task',
+      ),
+    ],
+    relations: <obx_int.ModelRelation>[],
+    backlinks: <obx_int.ModelBacklink>[],
+  ),
+  obx_int.ModelEntity(
+    id: const obx_int.IdUid(4, 175296335523572736),
+    name: 'User',
+    lastPropertyId: const obx_int.IdUid(3, 8630661320177676652),
+    flags: 2,
+    properties: <obx_int.ModelProperty>[
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(1, 3083866580755963842),
+        name: 'id',
+        type: 6,
+        flags: 1,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(2, 6222350882398325952),
+        name: 'email',
+        type: 9,
+        flags: 0,
+      ),
+      obx_int.ModelProperty(
+        id: const obx_int.IdUid(3, 8630661320177676652),
+        name: 'password',
+        type: 9,
+        flags: 0,
       ),
     ],
     relations: <obx_int.ModelRelation>[],
@@ -167,8 +237,8 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(3, 589978183497695498),
-    lastIndexId: const obx_int.IdUid(2, 7930975302100794258),
+    lastEntityId: const obx_int.IdUid(4, 175296335523572736),
+    lastIndexId: const obx_int.IdUid(2, 2401339953831432676),
     lastRelationId: const obx_int.IdUid(0, 0),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -181,25 +251,31 @@ obx_int.ModelDefinition getObjectBoxModel() {
   );
 
   final bindings = <Type, obx_int.EntityDefinition>{
-    Project: obx_int.EntityDefinition<Project>(
+    Cases: obx_int.EntityDefinition<Cases>(
       model: _entities[0],
-      toOneRelations: (Project object) => [],
-      toManyRelations: (Project object) => {
+      toOneRelations: (Cases object) => [],
+      toManyRelations: (Cases object) => {
         obx_int.RelInfo<Task>.toOneBacklink(
-          6,
+          11,
           object.id,
-          (Task srcObject) => srcObject.project,
+          (Task srcObject) => srcObject.cases,
         ): object.tasks,
       },
-      getId: (Project object) => object.id,
-      setId: (Project object, int id) {
+      getId: (Cases object) => object.id,
+      setId: (Cases object, int id) {
         object.id = id;
       },
-      objectToFB: (Project object, fb.Builder fbb) {
+      objectToFB: (Cases object, fb.Builder fbb) {
         final nameOffset = fbb.writeString(object.name);
-        fbb.startTable(3);
+        final descriptionOffset = object.description == null
+            ? null
+            : fbb.writeString(object.description!);
+        fbb.startTable(6);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, nameOffset);
+        fbb.addOffset(2, descriptionOffset);
+        fbb.addInt64(3, object.createdAt.millisecondsSinceEpoch);
+        fbb.addInt64(4, object.updatedAt.millisecondsSinceEpoch);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -215,14 +291,29 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final nameParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 6, '');
-        final object = Project(id: idParam, name: nameParam);
-        obx_int.InternalToManyAccess.setRelInfo<Project>(
+        final descriptionParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGetNullable(buffer, rootOffset, 8);
+        final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 10, 0),
+        );
+        final updatedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 12, 0),
+        );
+        final object = Cases(
+          id: idParam,
+          name: nameParam,
+          description: descriptionParam,
+          createdAt: createdAtParam,
+          updatedAt: updatedAtParam,
+        );
+        obx_int.InternalToManyAccess.setRelInfo<Cases>(
           object.tasks,
           store,
           obx_int.RelInfo<Task>.toOneBacklink(
-            6,
+            11,
             object.id,
-            (Task srcObject) => srcObject.project,
+            (Task srcObject) => srcObject.cases,
           ),
         );
         return object;
@@ -230,14 +321,8 @@ obx_int.ModelDefinition getObjectBoxModel() {
     ),
     Task: obx_int.EntityDefinition<Task>(
       model: _entities[1],
-      toOneRelations: (Task object) => [object.project],
-      toManyRelations: (Task object) => {
-        obx_int.RelInfo<TaskImage>.toOneBacklink(
-          3,
-          object.id,
-          (TaskImage srcObject) => srcObject.task,
-        ): object.images,
-      },
+      toOneRelations: (Task object) => [object.cases],
+      toManyRelations: (Task object) => {},
       getId: (Task object) => object.id,
       setId: (Task object, int id) {
         object.id = id;
@@ -245,14 +330,24 @@ obx_int.ModelDefinition getObjectBoxModel() {
       objectToFB: (Task object, fb.Builder fbb) {
         final titleOffset = fbb.writeString(object.title);
         final descriptionOffset = fbb.writeString(object.description);
+        final imageOffset = object.image == null
+            ? null
+            : fbb.writeListInt64(object.image!);
         final priorityOffset = fbb.writeString(object.priority);
-        fbb.startTable(7);
+        final reviewNotesOffset = fbb.writeString(object.reviewNotes);
+        final updatedByOffset = fbb.writeString(object.updatedBy);
+        fbb.startTable(12);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, titleOffset);
         fbb.addOffset(2, descriptionOffset);
-        fbb.addBool(3, object.isCompleted);
-        fbb.addOffset(4, priorityOffset);
-        fbb.addInt64(5, object.project.targetId);
+        fbb.addOffset(3, imageOffset);
+        fbb.addBool(4, object.isCompleted);
+        fbb.addBool(5, object.isSynced);
+        fbb.addOffset(6, priorityOffset);
+        fbb.addOffset(7, reviewNotesOffset);
+        fbb.addInt64(8, object.updatedAt.millisecondsSinceEpoch);
+        fbb.addOffset(9, updatedByOffset);
+        fbb.addInt64(10, object.cases.targetId);
         fbb.finish(fbb.endTable());
         return object.id;
       },
@@ -271,38 +366,53 @@ obx_int.ModelDefinition getObjectBoxModel() {
         final descriptionParam = const fb.StringReader(
           asciiOptimization: true,
         ).vTableGet(buffer, rootOffset, 8, '');
+        final imageParam = const fb.ListReader<int>(
+          fb.Int64Reader(),
+          lazy: false,
+        ).vTableGetNullable(buffer, rootOffset, 10);
         final isCompletedParam = const fb.BoolReader().vTableGet(
           buffer,
           rootOffset,
-          10,
+          12,
+          false,
+        );
+        final isSyncedParam = const fb.BoolReader().vTableGet(
+          buffer,
+          rootOffset,
+          14,
           false,
         );
         final priorityParam = const fb.StringReader(
           asciiOptimization: true,
-        ).vTableGet(buffer, rootOffset, 12, '');
+        ).vTableGet(buffer, rootOffset, 16, '');
+        final reviewNotesParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 18, '');
+        final updatedAtParam = DateTime.fromMillisecondsSinceEpoch(
+          const fb.Int64Reader().vTableGet(buffer, rootOffset, 20, 0),
+        );
+        final updatedByParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 22, '');
         final object = Task(
           id: idParam,
           title: titleParam,
           description: descriptionParam,
+          image: imageParam,
           isCompleted: isCompletedParam,
+          isSynced: isSyncedParam,
           priority: priorityParam,
+          reviewNotes: reviewNotesParam,
+          updatedAt: updatedAtParam,
+          updatedBy: updatedByParam,
         );
-        object.project.targetId = const fb.Int64Reader().vTableGet(
+        object.cases.targetId = const fb.Int64Reader().vTableGet(
           buffer,
           rootOffset,
-          14,
+          24,
           0,
         );
-        object.project.attach(store);
-        obx_int.InternalToManyAccess.setRelInfo<Task>(
-          object.images,
-          store,
-          obx_int.RelInfo<TaskImage>.toOneBacklink(
-            3,
-            object.id,
-            (TaskImage srcObject) => srcObject.task,
-          ),
-        );
+        object.cases.attach(store);
         return object;
       },
     ),
@@ -342,25 +452,80 @@ obx_int.ModelDefinition getObjectBoxModel() {
         return object;
       },
     ),
+    User: obx_int.EntityDefinition<User>(
+      model: _entities[3],
+      toOneRelations: (User object) => [],
+      toManyRelations: (User object) => {},
+      getId: (User object) => object.id,
+      setId: (User object, int id) {
+        object.id = id;
+      },
+      objectToFB: (User object, fb.Builder fbb) {
+        final emailOffset = fbb.writeString(object.email);
+        final passwordOffset = fbb.writeString(object.password);
+        fbb.startTable(4);
+        fbb.addInt64(0, object.id);
+        fbb.addOffset(1, emailOffset);
+        fbb.addOffset(2, passwordOffset);
+        fbb.finish(fbb.endTable());
+        return object.id;
+      },
+      objectFromFB: (obx.Store store, ByteData fbData) {
+        final buffer = fb.BufferContext(fbData);
+        final rootOffset = buffer.derefObject(0);
+        final idParam = const fb.Int64Reader().vTableGet(
+          buffer,
+          rootOffset,
+          4,
+          0,
+        );
+        final emailParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 6, '');
+        final passwordParam = const fb.StringReader(
+          asciiOptimization: true,
+        ).vTableGet(buffer, rootOffset, 8, '');
+        final object = User(
+          id: idParam,
+          email: emailParam,
+          password: passwordParam,
+        );
+
+        return object;
+      },
+    ),
   };
 
   return obx_int.ModelDefinition(model, bindings);
 }
 
-/// [Project] entity fields to define ObjectBox queries.
-class Project_ {
-  /// See [Project.id].
-  static final id = obx.QueryIntegerProperty<Project>(
-    _entities[0].properties[0],
-  );
+/// [Cases] entity fields to define ObjectBox queries.
+class Cases_ {
+  /// See [Cases.id].
+  static final id = obx.QueryIntegerProperty<Cases>(_entities[0].properties[0]);
 
-  /// See [Project.name].
-  static final name = obx.QueryStringProperty<Project>(
+  /// See [Cases.name].
+  static final name = obx.QueryStringProperty<Cases>(
     _entities[0].properties[1],
   );
 
-  /// see [Project.tasks]
-  static final tasks = obx.QueryBacklinkToMany<Task, Project>(Task_.project);
+  /// See [Cases.description].
+  static final description = obx.QueryStringProperty<Cases>(
+    _entities[0].properties[2],
+  );
+
+  /// See [Cases.createdAt].
+  static final createdAt = obx.QueryDateProperty<Cases>(
+    _entities[0].properties[3],
+  );
+
+  /// See [Cases.updatedAt].
+  static final updatedAt = obx.QueryDateProperty<Cases>(
+    _entities[0].properties[4],
+  );
+
+  /// see [Cases.tasks]
+  static final tasks = obx.QueryBacklinkToMany<Task, Cases>(Task_.cases);
 }
 
 /// [Task] entity fields to define ObjectBox queries.
@@ -378,24 +543,44 @@ class Task_ {
     _entities[1].properties[2],
   );
 
+  /// See [Task.image].
+  static final image = obx.QueryIntegerVectorProperty<Task>(
+    _entities[1].properties[3],
+  );
+
   /// See [Task.isCompleted].
   static final isCompleted = obx.QueryBooleanProperty<Task>(
-    _entities[1].properties[3],
+    _entities[1].properties[4],
+  );
+
+  /// See [Task.isSynced].
+  static final isSynced = obx.QueryBooleanProperty<Task>(
+    _entities[1].properties[5],
   );
 
   /// See [Task.priority].
   static final priority = obx.QueryStringProperty<Task>(
-    _entities[1].properties[4],
+    _entities[1].properties[6],
   );
 
-  /// See [Task.project].
-  static final project = obx.QueryRelationToOne<Task, Project>(
-    _entities[1].properties[5],
+  /// See [Task.reviewNotes].
+  static final reviewNotes = obx.QueryStringProperty<Task>(
+    _entities[1].properties[7],
   );
 
-  /// see [Task.images]
-  static final images = obx.QueryBacklinkToMany<TaskImage, Task>(
-    TaskImage_.task,
+  /// See [Task.updatedAt].
+  static final updatedAt = obx.QueryDateProperty<Task>(
+    _entities[1].properties[8],
+  );
+
+  /// See [Task.updatedBy].
+  static final updatedBy = obx.QueryStringProperty<Task>(
+    _entities[1].properties[9],
+  );
+
+  /// See [Task.cases].
+  static final cases = obx.QueryRelationToOne<Task, Cases>(
+    _entities[1].properties[10],
   );
 }
 
@@ -414,5 +599,21 @@ class TaskImage_ {
   /// See [TaskImage.task].
   static final task = obx.QueryRelationToOne<TaskImage, Task>(
     _entities[2].properties[2],
+  );
+}
+
+/// [User] entity fields to define ObjectBox queries.
+class User_ {
+  /// See [User.id].
+  static final id = obx.QueryIntegerProperty<User>(_entities[3].properties[0]);
+
+  /// See [User.email].
+  static final email = obx.QueryStringProperty<User>(
+    _entities[3].properties[1],
+  );
+
+  /// See [User.password].
+  static final password = obx.QueryStringProperty<User>(
+    _entities[3].properties[2],
   );
 }

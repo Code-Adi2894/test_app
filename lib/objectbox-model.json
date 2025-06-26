@@ -4,99 +4,164 @@
   "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
   "entities": [
     {
-      "id": "1:6794400836192872297",
-      "lastPropertyId": "2:2385285082412069306",
-      "name": "Project",
+      "id": "1:4928506080943321365",
+      "lastPropertyId": "5:988562953783482796",
+      "name": "Cases",
       "flags": 2,
       "properties": [
         {
-          "id": "1:58889050677478285",
+          "id": "1:3270234421556566351",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:2385285082412069306",
+          "id": "2:1544682226278838351",
           "name": "name",
           "type": 9
-        }
-      ],
-      "relations": []
-    },
-    {
-      "id": "2:5163393374740872442",
-      "lastPropertyId": "6:6707316671868555083",
-      "name": "Task",
-      "flags": 2,
-      "properties": [
-        {
-          "id": "1:188744288653409619",
-          "name": "id",
-          "type": 6,
-          "flags": 1
         },
         {
-          "id": "2:3486102509344387158",
-          "name": "title",
-          "type": 9
-        },
-        {
-          "id": "3:3250703588374377764",
+          "id": "3:7505108567032546123",
           "name": "description",
           "type": 9
         },
         {
-          "id": "4:5885532560597471229",
-          "name": "isCompleted",
-          "type": 1
+          "id": "4:4714504161677148253",
+          "name": "createdAt",
+          "type": 10
         },
         {
-          "id": "5:2836230617580419348",
-          "name": "priority",
-          "type": 9
-        },
-        {
-          "id": "6:6707316671868555083",
-          "name": "projectId",
-          "type": 11,
-          "flags": 520,
-          "indexId": "1:8805263474178088887",
-          "relationTarget": "Project"
+          "id": "5:988562953783482796",
+          "name": "updatedAt",
+          "type": 10
         }
       ],
       "relations": []
     },
     {
-      "id": "3:589978183497695498",
-      "lastPropertyId": "3:9021886289986744184",
-      "name": "TaskImage",
+      "id": "2:7303830116752376038",
+      "lastPropertyId": "11:3797033478096565118",
+      "name": "Task",
       "flags": 2,
       "properties": [
         {
-          "id": "1:130793918457884233",
+          "id": "1:3566904362829741038",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:369819727757058807",
+          "id": "2:199392358065594273",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "3:5331862787313707698",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "4:3685568447503670687",
+          "name": "image",
+          "type": 27
+        },
+        {
+          "id": "5:686432918972397697",
+          "name": "isCompleted",
+          "type": 1
+        },
+        {
+          "id": "6:2478158423680019983",
+          "name": "isSynced",
+          "type": 1
+        },
+        {
+          "id": "7:3056334775967883969",
+          "name": "priority",
+          "type": 9
+        },
+        {
+          "id": "8:5683471673077875272",
+          "name": "reviewNotes",
+          "type": 9
+        },
+        {
+          "id": "9:840213970365776684",
+          "name": "updatedAt",
+          "type": 10
+        },
+        {
+          "id": "10:6664169112017085806",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "11:3797033478096565118",
+          "name": "casesId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "1:4495191334989471266",
+          "relationTarget": "Cases"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:4365900320187002626",
+      "lastPropertyId": "3:458568116549610803",
+      "name": "TaskImage",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:5061345639218495751",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3705254952129675370",
           "name": "imageBytes",
           "type": 23
         },
         {
-          "id": "3:9021886289986744184",
+          "id": "3:458568116549610803",
           "name": "taskId",
           "type": 11,
           "flags": 520,
-          "indexId": "2:7930975302100794258",
+          "indexId": "2:2401339953831432676",
           "relationTarget": "Task"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "4:175296335523572736",
+      "lastPropertyId": "3:8630661320177676652",
+      "name": "User",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:3083866580755963842",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:6222350882398325952",
+          "name": "email",
+          "type": 9
+        },
+        {
+          "id": "3:8630661320177676652",
+          "name": "password",
+          "type": 9
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "3:589978183497695498",
-  "lastIndexId": "2:7930975302100794258",
+  "lastEntityId": "4:175296335523572736",
+  "lastIndexId": "2:2401339953831432676",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

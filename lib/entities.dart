@@ -2,17 +2,38 @@ import 'package:objectbox/objectbox.dart';
 
 @Entity()
 @Sync()
-class Project {
+class User {
+  int id;
+  String email;
+  String password;
+
+  User({
+    this.id = 0,
+    required this.email,
+    required this.password,
+  });
+}
+
+@Entity()
+@Sync()
+class Cases {
   int id;
   String name;
+  String? description;
+  DateTime createdAt;
+  DateTime updatedAt;
 
   @Backlink()
   final tasks = ToMany<Task>();
 
-  Project({
+  Cases({
     this.id = 0,
-    required this.name
-  });
+    required this.name,
+    this.description,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 }
 
 @Entity()
@@ -21,22 +42,28 @@ class Task {
   int id;
   String title;
   String description;
+  List<int>? image;
   bool isCompleted;
+  bool isSynced;
   String priority;
+  String reviewNotes;
+  DateTime updatedAt;
+  String updatedBy;
 
-
-  @Backlink('task')
-  final images = ToMany<TaskImage>();
-
-  final project = ToOne<Project>();
+  final cases = ToOne<Cases>();
 
   Task({
     this.id = 0,
     required this.title,
     required this.description,
+    this.image,
     this.isCompleted = false,
+    this.isSynced = false,
     this.priority = "LOW",
-  });
+    this.reviewNotes = '',
+    DateTime? updatedAt,
+    this.updatedBy = '',
+  }) : updatedAt = updatedAt ?? DateTime.now();
 }
 
 @Entity()
