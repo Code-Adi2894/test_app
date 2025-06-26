@@ -1,6 +1,9 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../entities.dart';
 import '../main.dart';
+import 'dart:typed_data';
 
 final taskBox = objectbox.store.box<Task>();
 
@@ -18,6 +21,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   bool isCompleted = false;
   String priority = '';
   var levels = ["LOW", "MEDIUM", "HIGH"];
+  List<int> images = [];
+  File? imageFile;
 
   @override
   void initState(){
@@ -26,6 +31,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     descriptionController = TextEditingController(text: widget.task.description);
     isCompleted = widget.task.isCompleted;
     priority = widget.task.priority;
+    print(widget.task.images.length);
   }
 
   @override
@@ -89,6 +95,49 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   }
               )
           ),
+
+          if(widget.task.images.isNotEmpty)
+            Padding(
+                padding: EdgeInsets.all(16.0),
+                child: SizedBox(
+                  height: 100,
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: widget.task.images.length,
+                    itemBuilder: (context, index){
+                      final image = widget.task.images[index];
+                      return Padding(
+                        padding: EdgeInsets.symmetric(horizontal:4),
+                        child: ClipRRect(
+                          child: Image.memory(
+                            Uint8List.fromList(image.imageBytes),
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                      )
+                      );
+                    }
+                  )
+                )
+            ),
+
+
+
+
+
+          ElevatedButton(
+              onPressed: () async {
+                final picker = ImagePicker();
+                final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                if (pickedFile != null) {
+                  setState(() {
+                    imageFile = File(pickedFile.path);
+                  });
+                }
+              },
+              child: Text("Upload images")
+          ),
           Expanded(child: Container(),),
           ElevatedButton(
             onPressed: (){
@@ -96,6 +145,9 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               widget.task.description = descriptionController.text;
               widget.task.isCompleted = isCompleted;
               widget.task.priority = priority;
+
+
+
               try{
                 taskBox.put(widget.task);
                 Navigator.pop(context);

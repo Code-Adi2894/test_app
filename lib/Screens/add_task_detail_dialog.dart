@@ -1,8 +1,13 @@
+// import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import '../entities.dart';
 import 'package:test_app/main.dart';
+import 'package:image_picker/image_picker.dart';
+
 
 final taskBox = objectbox.store.box<Task>();
+final taskImageBox = objectbox.store.box<TaskImage>();
 
 void showCustomDialog(BuildContext context, Project project) {
   TextEditingController titleController = TextEditingController();
@@ -10,6 +15,8 @@ void showCustomDialog(BuildContext context, Project project) {
   bool isCompleted = false;
   String priority = "LOW";
   var levels = ["LOW", "MEDIUM", "HIGH"];
+  // File? imageFile;
+  List<Uint8List> selectedImages = [];
 
   showDialog(
     context: context,
@@ -57,7 +64,23 @@ void showCustomDialog(BuildContext context, Project project) {
                           priority = newValue!;
                         });
                       }
-                  )
+                  ),
+                  ElevatedButton(
+                      onPressed: () async {
+                        final picker = ImagePicker();
+                        final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                        if (pickedFile != null) {
+                          final bytes = await pickedFile.readAsBytes();
+                          setState(() {
+                            selectedImages.add(bytes);
+                          });
+                        }
+                      },
+                      child: Text("Upload images")
+                  ),
+
+
+
                 ],
               ),
             ),
@@ -67,15 +90,20 @@ void showCustomDialog(BuildContext context, Project project) {
                 child: const Text('Cancel'),
               ),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async {
                   final title = titleController.text;
                   final description = descriptionController.text;
                   final task = Task(title: title, description: description, isCompleted: isCompleted, priority: priority);
-                  try{
+
+                  try {
                     task.project.target = project;
                     taskBox.put(task);
-                    print('Saved input: $title, $description, $isCompleted');
-                  } catch(e){
+                    for(final bytes in selectedImages){
+                      final taskImage = TaskImage(imageBytes: bytes);
+                      taskImage.task.target = task;
+                      taskImageBox.put(taskImage);
+                    }
+                  }catch(e){
                     print("Error $e");
                   }
                   Navigator.pop(context);

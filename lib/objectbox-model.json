@@ -4,19 +4,19 @@
   "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
   "entities": [
     {
-      "id": "1:4586248237007907258",
-      "lastPropertyId": "2:4565180862407038464",
+      "id": "1:6794400836192872297",
+      "lastPropertyId": "2:2385285082412069306",
       "name": "Project",
       "flags": 2,
       "properties": [
         {
-          "id": "1:5338282227961137775",
+          "id": "1:58889050677478285",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:4565180862407038464",
+          "id": "2:2385285082412069306",
           "name": "name",
           "type": 9
         }
@@ -24,51 +24,79 @@
       "relations": []
     },
     {
-      "id": "2:2166071371638146430",
-      "lastPropertyId": "6:6463368824846576933",
+      "id": "2:5163393374740872442",
+      "lastPropertyId": "6:6707316671868555083",
       "name": "Task",
       "flags": 2,
       "properties": [
         {
-          "id": "1:5438403364332432677",
+          "id": "1:188744288653409619",
           "name": "id",
           "type": 6,
           "flags": 1
         },
         {
-          "id": "2:4691259114376190203",
+          "id": "2:3486102509344387158",
           "name": "title",
           "type": 9
         },
         {
-          "id": "3:6786321433711601981",
+          "id": "3:3250703588374377764",
           "name": "description",
           "type": 9
         },
         {
-          "id": "4:7375566084544407708",
+          "id": "4:5885532560597471229",
           "name": "isCompleted",
           "type": 1
         },
         {
-          "id": "5:2705602480657851208",
+          "id": "5:2836230617580419348",
           "name": "priority",
           "type": 9
         },
         {
-          "id": "6:6463368824846576933",
+          "id": "6:6707316671868555083",
           "name": "projectId",
           "type": 11,
           "flags": 520,
-          "indexId": "1:3959085063464020899",
+          "indexId": "1:8805263474178088887",
           "relationTarget": "Project"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:589978183497695498",
+      "lastPropertyId": "3:9021886289986744184",
+      "name": "TaskImage",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:130793918457884233",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:369819727757058807",
+          "name": "imageBytes",
+          "type": 23
+        },
+        {
+          "id": "3:9021886289986744184",
+          "name": "taskId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "2:7930975302100794258",
+          "relationTarget": "Task"
         }
       ],
       "relations": []
     }
   ],
-  "lastEntityId": "2:2166071371638146430",
-  "lastIndexId": "1:3959085063464020899",
+  "lastEntityId": "3:589978183497695498",
+  "lastIndexId": "2:7930975302100794258",
   "lastRelationId": "0:0",
   "lastSequenceId": "0:0",
   "modelVersion": 5,

@@ -24,6 +24,10 @@ class Task {
   bool isCompleted;
   String priority;
 
+
+  @Backlink('task')
+  final images = ToMany<TaskImage>();
+
   final project = ToOne<Project>();
 
   Task({
@@ -31,6 +35,19 @@ class Task {
     required this.title,
     required this.description,
     this.isCompleted = false,
-    this.priority = "LOW"
+    this.priority = "LOW",
   });
+}
+
+@Entity()
+@Sync()
+class TaskImage {
+  int id = 0;
+
+  @Property(type: PropertyType.byteVector)
+  List<int> imageBytes;
+
+  final task = ToOne<Task>();
+
+  TaskImage({required this.imageBytes});
 }
