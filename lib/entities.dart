@@ -48,13 +48,13 @@ class Task {
   int id;
   String title;
   String description;
-  List<int>? image;
   bool isCompleted;
   bool isSynced;
   String priority;
   String reviewNotes;
   DateTime updatedAt;
   String updatedBy;
+  String syncStatus; // 'pending', 'syncing', 'synced', 'failed'
 
   final cases = ToOne<Cases>();
 
@@ -62,13 +62,13 @@ class Task {
     this.id = 0,
     required this.title,
     required this.description,
-    this.image,
     this.isCompleted = false,
     this.isSynced = false,
     this.priority = "LOW",
     this.reviewNotes = '',
     DateTime? updatedAt,
     this.updatedBy = '',
+    this.syncStatus = 'pending',
   }) : updatedAt = updatedAt ?? DateTime.now();
 }
 

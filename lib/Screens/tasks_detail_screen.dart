@@ -64,6 +64,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     widget.task.updatedAt = DateTime.now();
     widget.task.updatedBy = 'Current User'; // You can replace this with actual user info
     widget.task.isSynced = false; // Mark as needing sync
+    widget.task.syncStatus = 'pending'; // Set sync status to pending
 
     try{
       taskBox.put(widget.task);
@@ -88,6 +89,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     try {
       final syncTime = DateTime.now();
       widget.task.isSynced = true;
+      widget.task.syncStatus = 'synced';
       widget.task.updatedAt = syncTime;
       widget.task.updatedBy = 'Current User'; // You can replace this with actual user info
       
@@ -136,6 +138,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         
         // Mark task as needing sync
         widget.task.isSynced = false;
+        widget.task.syncStatus = 'pending';
         widget.task.updatedAt = DateTime.now();
         widget.task.updatedBy = 'Current User';
         taskBox.put(widget.task);
@@ -177,6 +180,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       
       // Mark task as needing sync
       widget.task.isSynced = false;
+      widget.task.syncStatus = 'pending';
       widget.task.updatedAt = DateTime.now();
       widget.task.updatedBy = 'Current User';
       taskBox.put(widget.task);

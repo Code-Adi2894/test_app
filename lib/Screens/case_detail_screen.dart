@@ -32,6 +32,13 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     super.initState();
     _connectivity = Connectivity();
     _checkConnectivity();
+    
+    // Listen to connectivity changes
+    _connectivity.onConnectivityChanged.listen((results) {
+      setState(() {
+        _isOnline = results.isNotEmpty && results.first != ConnectivityResult.none;
+      });
+    });
   }
 
   Future<void> _checkConnectivity() async {
@@ -45,6 +52,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
     try {
       final syncTime = DateTime.now();
       task.isSynced = true;
+      task.syncStatus = 'synced';
       task.updatedAt = syncTime;
       task.updatedBy = 'Current User'; // You can replace this with actual user info
       
@@ -157,7 +165,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                               decoration: BoxDecoration(
-                                color: widget.case_.isSynced 
+                                color: (_isOnline && widget.case_.isSynced)
                                   ? const Color(0xFFE8F5E8) 
                                   : const Color(0xFFFFEBEE),
                                 borderRadius: BorderRadius.circular(12),
@@ -166,19 +174,19 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Icon(
-                                    widget.case_.isSynced ? Icons.check_circle : Icons.sync,
+                                    (_isOnline && widget.case_.isSynced) ? Icons.check_circle : Icons.sync,
                                     size: 14,
-                                    color: widget.case_.isSynced 
+                                    color: (_isOnline && widget.case_.isSynced)
                                       ? const Color(0xFF28A745) 
                                       : const Color(0xFFDC3545),
                                   ),
                                   const SizedBox(width: 4),
                                   Text(
-                                    widget.case_.isSynced ? 'Synced' : 'Pending',
+                                    (_isOnline && widget.case_.isSynced) ? 'Synced' : 'Pending',
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
-                                      color: widget.case_.isSynced 
+                                      color: (_isOnline && widget.case_.isSynced)
                                         ? const Color(0xFF28A745) 
                                         : const Color(0xFFDC3545),
                                     ),
@@ -320,53 +328,69 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF3F1FC), // pastel card
-                              borderRadius: BorderRadius.circular(24),
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(0.06),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
+                                  color: Colors.black.withOpacity(0.1),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
                                 ),
                               ],
                             ),
                             child: ListTile(
                               contentPadding: const EdgeInsets.all(20),
-                              title: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      task.title,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Color(0xFF495057),
-                                      ),
-                                    ),
-                                  ),
-                                  // Task sync status indicator
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: task.isSynced 
-                                        ? const Color(0xFFE8F5E8) 
-                                        : const Color(0xFFFFEBEE),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Icon(
-                                      task.isSynced ? Icons.check_circle : Icons.sync,
-                                      size: 12,
-                                      color: task.isSynced 
-                                        ? const Color(0xFF28A745) 
-                                        : const Color(0xFFDC3545),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              subtitle: Column(
+                              title: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          task.title,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF495057),
+                                          ),
+                                        ),
+                                      ),
+                                      // Task sync status indicator
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: (_isOnline && task.isSynced)
+                                            ? const Color(0xFFE8F5E8) 
+                                            : const Color(0xFFFFEBEE),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              (_isOnline && task.isSynced) ? Icons.check_circle : Icons.sync,
+                                              size: 14,
+                                              color: (_isOnline && task.isSynced)
+                                                ? const Color(0xFF28A745) 
+                                                : const Color(0xFFDC3545),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              (_isOnline && task.isSynced) ? 'Synced' : 'Pending',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: (_isOnline && task.isSynced)
+                                                  ? const Color(0xFF28A745) 
+                                                  : const Color(0xFFDC3545),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 8),
                                   Text(
                                     task.description,
                                     style: const TextStyle(
@@ -376,10 +400,11 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                     maxLines: 2,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 8),
+                                  const SizedBox(height: 12),
                                   // Task metadata
                                   Row(
                                     children: [
+                                      // Priority badge
                                       Container(
                                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                         decoration: BoxDecoration(
@@ -396,10 +421,38 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 8),
-                                      Icon(
-                                        task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                                        color: task.isCompleted ? Colors.green : const Color(0xFF6C757D),
-                                        size: 16,
+                                      // Completion status with text and icon
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                        decoration: BoxDecoration(
+                                          color: task.isCompleted 
+                                            ? const Color(0xFFE8F5E8) 
+                                            : const Color(0xFFF3F4F6),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Icon(
+                                              task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
+                                              size: 14,
+                                              color: task.isCompleted 
+                                                ? const Color(0xFF28A745) 
+                                                : const Color(0xFF6C757D),
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Text(
+                                              task.isCompleted ? 'Completed' : 'Pending',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: task.isCompleted 
+                                                  ? const Color(0xFF28A745) 
+                                                  : const Color(0xFF6C757D),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                       const Spacer(),
                                       // Task sync button - only show when online
@@ -494,6 +547,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
       final tasks = taskBox.query(Task_.cases.equals(widget.case_.id)).build().find();
       for (var task in tasks) {
         task.isSynced = true;
+        task.syncStatus = 'synced';
         task.updatedAt = syncTime;
         task.updatedBy = 'Current User'; // You can replace this with actual user info
       }

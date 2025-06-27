@@ -81,6 +81,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
           final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
           for (var task in tasks) {
             task.isSynced = true;
+            task.syncStatus = 'synced';
             task.updatedAt = syncTime;
           }
           taskBox.putMany(tasks);
@@ -294,6 +295,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
         final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
         for (var task in tasks) {
           task.isSynced = true;
+          task.syncStatus = 'synced';
           task.updatedAt = syncTime;
         }
         taskBox.putMany(tasks);
@@ -417,6 +419,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
         final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
         for (var task in tasks) {
           task.isSynced = true;
+          task.syncStatus = 'synced';
           task.updatedAt = syncTime;
         }
         taskBox.putMany(tasks);
@@ -459,6 +462,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
       final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
       for (var task in tasks) {
         task.isSynced = true;
+        task.syncStatus = 'synced';
         task.updatedAt = syncTime;
       }
       taskBox.putMany(tasks);
@@ -532,6 +536,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
       final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
       for (var task in tasks) {
         task.isSynced = true;
+        task.syncStatus = 'synced';
         task.updatedAt = syncTime;
       }
       taskBox.putMany(tasks);
@@ -794,7 +799,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(
-                                                color: case_.isSynced 
+                                                color: (_isOnline && case_.isSynced)
                                                   ? const Color(0xFFE8F5E8) 
                                                   : const Color(0xFFFFEBEE),
                                                 borderRadius: BorderRadius.circular(12),
@@ -803,19 +808,19 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
                                                   Icon(
-                                                    case_.isSynced ? Icons.check_circle : Icons.sync,
+                                                    (_isOnline && case_.isSynced) ? Icons.check_circle : Icons.sync,
                                                     size: 14,
-                                                    color: case_.isSynced 
+                                                    color: (_isOnline && case_.isSynced)
                                                       ? const Color(0xFF28A745) 
                                                       : const Color(0xFFDC3545),
                                                   ),
                                                   const SizedBox(width: 4),
                                                   Text(
-                                                    case_.isSynced ? 'Synced' : 'Pending',
+                                                    (_isOnline && case_.isSynced) ? 'Synced' : 'Pending',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       fontWeight: FontWeight.w600,
-                                                      color: case_.isSynced 
+                                                      color: (_isOnline && case_.isSynced)
                                                         ? const Color(0xFF28A745) 
                                                         : const Color(0xFFDC3545),
                                                     ),
