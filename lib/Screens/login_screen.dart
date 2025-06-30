@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
+import '../services/user_service.dart';
 import 'case_list_screen.dart';
 import 'register_screen.dart';
 
@@ -36,23 +37,16 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      // Check if user exists
-      final query = userBox.query(User_.email.equals(_emailController.text)).build();
-      final users = query.find();
-      query.close();
-
-      if (users.isNotEmpty) {
-        final user = users.first;
-        if (user.password == _passwordController.text) {
-          // Login successful
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const CaseListScreen()),
-          );
-        } else {
-          _showErrorDialog('Invalid password');
-        }
+      // Use the user service to login
+      final user = userService.loginUser(_emailController.text, _passwordController.text);
+      
+      if (user != null) {
+        // Login successful
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const CaseListScreen()),
+        );
       } else {
-        _showErrorDialog('User not found');
+        _showErrorDialog('Invalid email or password');
       }
     } catch (e) {
       _showErrorDialog('Login failed: $e');

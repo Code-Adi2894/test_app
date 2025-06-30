@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
-import 'tasks_detail_screen.dart';
-import 'add_task_detail_dialog.dart';
+import '../services/user_service.dart';
+import '../services/sync_service.dart';
 import '../widgets/offline_indicator.dart';
+import '../widgets/user_info_widget.dart';
+import './tasks_detail_screen.dart';
+import './add_task_detail_dialog.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 final caseBox = objectbox.store.box<Cases>();
@@ -43,22 +46,18 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
 
   void _syncTask(Task task) async {
     try {
-      final syncTime = DateTime.now();
-      task.isSynced = true;
-      task.updatedAt = syncTime;
-      task.updatedBy = 'Current User'; // You can replace this with actual user info
-      
-      taskBox.put(task);
-      
-      await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Task "${task.title}" synced successfully!'),
-          backgroundColor: const Color(0xFF28A745),
-          duration: const Duration(seconds: 2),
-        ),
-      );
+      final success = await syncService.syncTask(task);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Task "${task.title}" synced successfully!'),
+            backgroundColor: const Color(0xFF28A745),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        throw Exception('Sync failed');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -484,32 +483,18 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
 
   void _syncCase() async {
     try {
-      final syncTime = DateTime.now();
-      widget.case_.isSynced = true;
-      widget.case_.lastSyncedAt = syncTime;
-      widget.case_.syncStatus = 'synced';
-      widget.case_.updatedAt = syncTime;
-      
-      // Sync all tasks in this case
-      final tasks = taskBox.query(Task_.cases.equals(widget.case_.id)).build().find();
-      for (var task in tasks) {
-        task.isSynced = true;
-        task.updatedAt = syncTime;
-        task.updatedBy = 'Current User'; // You can replace this with actual user info
+      final success = await syncService.syncCase(widget.case_);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Case "${widget.case_.name}" synchronized successfully!'),
+            backgroundColor: const Color(0xFF28A745),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      } else {
+        throw Exception('Sync failed');
       }
-      taskBox.putMany(tasks);
-      
-      caseBox.put(widget.case_);
-      
-      await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Case "${widget.case_.name}" and ${tasks.length} tasks synced successfully!'),
-          backgroundColor: const Color(0xFF28A745),
-          duration: const Duration(seconds: 2),
-        ),
-      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

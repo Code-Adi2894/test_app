@@ -13,8 +13,17 @@ class ObjectBox {
   /// Create an instance of ObjectBox to use throughout the app.
   static Future<ObjectBox> create() async {
     final docsDir = await getApplicationDocumentsDirectory();
+    final storeDir = p.join(docsDir.path, "obx-example");
+    
+    // Debug: Print the store directory
+    print('ObjectBox store directory: $storeDir');
+    
     // Future<Store> openStore() {...} is defined in the generated objectbox.g.dart
-    final store = await openStore(directory: p.join(docsDir.path, "obx-example"));
+    final store = await openStore(directory: storeDir);
+    
+    // Debug: Print store information
+    print('ObjectBox store created successfully');
+    
     return ObjectBox._create(store);
   }
 }

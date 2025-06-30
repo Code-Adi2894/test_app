@@ -6,6 +6,7 @@ import 'package:test_app/Screens/login_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'objectbox.dart';
+import 'services/user_service.dart';
 
 late ObjectBox objectbox;
 
@@ -60,8 +61,28 @@ Future<void>  main() async{
   } catch(e){
     print("Sync client error: $e");
   }
+  
+  // Debug: Print user information
+  _debugUserInfo();
+  
   printLocalPath();
   runApp(const MyApp());
+}
+
+void _debugUserInfo() {
+  try {
+    final userCount = userService.getUserCount();
+    final allUsers = userService.getAllUsers();
+    
+    print('=== DEBUG USER INFO ===');
+    print('Total users in database: $userCount');
+    for (var user in allUsers) {
+      print('User ID: ${user.id}, Email: ${user.email}');
+    }
+    print('=======================');
+  } catch (e) {
+    print('Error getting user info: $e');
+  }
 }
 
 Future<void> printLocalPath() async {

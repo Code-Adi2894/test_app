@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
+import '../services/user_service.dart';
 import 'login_screen.dart';
 
 final userBox = objectbox.store.box<User>();
@@ -38,23 +39,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
     });
 
     try {
-      // Check if user already exists
-      final query = userBox.query(User_.email.equals(_emailController.text)).build();
-      final existingUsers = query.find();
-      query.close();
-
-      if (existingUsers.isNotEmpty) {
-        _showErrorDialog('User with this email already exists');
-        return;
-      }
-
-      // Create new user
-      final newUser = User(
-        email: _emailController.text,
-        password: _passwordController.text,
+      // Use UserService to register the user
+      final newUser = userService.registerUser(
+        _emailController.text,
+        _passwordController.text,
       );
-
-      userBox.put(newUser);
+      
+      // Show debug information
+      print('Registration successful!');
+      print('User ID: ${newUser.id}');
+      print('User Email: ${newUser.email}');
+      print('Total users in database: ${userService.getUserCount()}');
       
       // Show success dialog and navigate to login
       _showSuccessDialog();

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
+import '../services/user_service.dart';
+import '../services/sync_service.dart';
 import './case_detail_screen.dart';
 import './login_screen.dart';
 import '../widgets/offline_indicator.dart';
@@ -60,6 +62,10 @@ class _CaseListScreenState extends State<CaseListScreen> {
   }
 
   void _autoSyncPendingCases() async {
+    if (!await syncService.isOnline()) {
+      return; // Don't auto-sync if offline
+    }
+
     final pendingCases = caseBox.query(Cases_.isSynced.equals(false)).build().find();
     if (pendingCases.isNotEmpty) {
       setState(() {
@@ -68,32 +74,13 @@ class _CaseListScreenState extends State<CaseListScreen> {
       });
 
       try {
-        final syncTime = DateTime.now();
-        int totalTasksSynced = 0;
-        
         for (var case_ in pendingCases) {
-          case_.isSynced = true;
-          case_.lastSyncedAt = syncTime;
-          case_.syncStatus = 'synced';
-          case_.updatedAt = syncTime;
-          
-          // Sync all tasks in this case
-          final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
-          for (var task in tasks) {
-            task.isSynced = true;
-            task.updatedAt = syncTime;
-          }
-          taskBox.putMany(tasks);
-          totalTasksSynced += tasks.length;
+          await syncService.syncCase(case_);
         }
-        
-        caseBox.putMany(pendingCases);
-        
-        await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${pendingCases.length} cases and $totalTasksSynced tasks auto-synced successfully!'),
+            content: Text('${pendingCases.length} cases auto-synced successfully!'),
             backgroundColor: const Color(0xFF28A745),
             duration: const Duration(seconds: 3),
           ),
@@ -121,26 +108,17 @@ class _CaseListScreenState extends State<CaseListScreen> {
 
     return showDialog(
       context: context,
-      builder: (context) {
+      builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: const Color(0xFFF8F9FA),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            "Add Case",
-            style: TextStyle(
-              color: Color(0xFF495057),
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+          title: const Text('Add New Case'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: titleController,
                 decoration: const InputDecoration(
-                  labelText: 'Title',
+                  labelText: 'Case Title',
+                  border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
@@ -148,7 +126,9 @@ class _CaseListScreenState extends State<CaseListScreen> {
                 controller: descriptionController,
                 decoration: const InputDecoration(
                   labelText: 'Description',
+                  border: OutlineInputBorder(),
                 ),
+                maxLines: 3,
               ),
             ],
           ),
@@ -159,30 +139,18 @@ class _CaseListScreenState extends State<CaseListScreen> {
             ),
             ElevatedButton(
               onPressed: () {
-                String title = titleController.text.trim();
-                String description = descriptionController.text.trim();
-                if (title.isNotEmpty) {
-                  final case_ = Cases(name: title, description: description);
-                  try {
-                    caseBox.put(case_);
-                    
-                    // Auto-sync new case if online
-                    if (_isOnline) {
-                      _autoSyncSingleCase(case_);
-                    }
-                  } catch (e) {
-                    print("Error $e");
-                  }
+                if (titleController.text.isNotEmpty) {
+                  final newCase = Cases(
+                    name: titleController.text,
+                    description: descriptionController.text,
+                    isSynced: false,
+                    syncStatus: 'pending',
+                  );
+                  caseBox.put(newCase);
                   Navigator.of(context).pop();
                 }
               },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2196F3),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('Add', style: TextStyle(color: Colors.white)),
+              child: const Text('Add'),
             ),
           ],
         );
@@ -190,20 +158,31 @@ class _CaseListScreenState extends State<CaseListScreen> {
     );
   }
 
+  void _logout() {
+    userService.logout();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
+  }
+
+  // Simple global sync function - one click sync all data
   void _syncData() async {
     setState(() {
       _isSyncing = true;
     });
 
     try {
-      // Simulate sync operation
-      await Future.delayed(const Duration(seconds: 2));
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Data synchronized successfully!'),
-          backgroundColor: Color(0xFF28A745),
-        ),
-      );
+      final success = await syncService.performSync();
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Data synchronized successfully!'),
+            backgroundColor: Color(0xFF28A745),
+          ),
+        );
+      } else {
+        throw Exception('Sync operation failed');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -219,6 +198,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
   }
 
   void _showSyncOptions() {
+    final syncOptions = syncService.getSyncOptions();
+    
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -250,24 +231,34 @@ class _CaseListScreenState extends State<CaseListScreen> {
                 ),
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.sync, color: Color(0xFF2196F3)),
-              title: const Text('Sync All Cases'),
-              subtitle: const Text('Sync all cases with latest timestamps'),
-              onTap: () {
+            ...syncOptions.map((option) => ListTile(
+              leading: Icon(
+                option['icon'] as IconData,
+                color: option['enabled'] 
+                  ? const Color(0xFF2196F3) 
+                  : const Color(0xFFBDBDBD),
+              ),
+              title: Text(
+                option['title'] as String,
+                style: TextStyle(
+                  color: option['enabled'] 
+                    ? const Color(0xFF222B45) 
+                    : const Color(0xFFBDBDBD),
+                ),
+              ),
+              subtitle: Text(
+                option['subtitle'] as String,
+                style: TextStyle(
+                  color: option['enabled'] 
+                    ? const Color(0xFF6C757D) 
+                    : const Color(0xFFBDBDBD),
+                ),
+              ),
+              onTap: option['enabled'] ? () {
                 Navigator.pop(context);
-                _syncAllCases();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.sync_alt, color: Color(0xFF2196F3)),
-              title: const Text('Sync Individual Cases'),
-              subtitle: const Text('Choose specific cases to sync'),
-              onTap: () {
-                Navigator.pop(context);
-                _showIndividualSyncDialog();
-              },
-            ),
+                _handleSyncOption(option['title'] as String);
+              } : null,
+            )).toList(),
             const SizedBox(height: 20),
           ],
         ),
@@ -275,40 +266,26 @@ class _CaseListScreenState extends State<CaseListScreen> {
     );
   }
 
-  void _syncAllCases() async {
+  void _handleSyncOption(String option) async {
     setState(() {
       _isSyncing = true;
     });
 
     try {
-      final cases = caseBox.getAll();
-      final syncTime = DateTime.now();
-      
-      for (var case_ in cases) {
-        case_.isSynced = true;
-        case_.lastSyncedAt = syncTime;
-        case_.syncStatus = 'synced';
-        case_.updatedAt = syncTime;
-        
-        // Sync all tasks in this case
-        final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
-        for (var task in tasks) {
-          task.isSynced = true;
-          task.updatedAt = syncTime;
-        }
-        taskBox.putMany(tasks);
+      switch (option) {
+        case 'Sync All Data':
+          await _syncAllData();
+          break;
+        case 'Sync Cases Only':
+          await _syncCasesOnly();
+          break;
+        case 'Sync Tasks Only':
+          await _syncTasksOnly();
+          break;
+        case 'View Sync Status':
+          _showSyncStatus();
+          break;
       }
-      
-      caseBox.putMany(cases);
-      
-      await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${cases.length} cases and their tasks synchronized successfully!'),
-          backgroundColor: const Color(0xFF28A745),
-        ),
-      );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -323,237 +300,131 @@ class _CaseListScreenState extends State<CaseListScreen> {
     }
   }
 
-  void _showIndividualSyncDialog() {
-    final cases = caseBox.getAll();
-    final selectedCases = <Cases>{};
-
-    showDialog(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFFF8F9FA),
-          title: const Text(
-            'Select Cases to Sync',
-            style: TextStyle(color: Color(0xFF495057)),
-          ),
-          content: SizedBox(
-            width: double.maxFinite,
-            height: 300,
-            child: ListView.builder(
-              itemCount: cases.length,
-              itemBuilder: (context, index) {
-                final case_ = cases[index];
-                final taskCount = taskBox.query(Task_.cases.equals(case_.id)).build().count();
-                return CheckboxListTile(
-                  title: Text(case_.name),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        case_.isSynced 
-                          ? 'Last synced: ${case_.lastSyncedAt?.toString().substring(0, 19) ?? 'Never'}'
-                          : 'Not synced',
-                        style: TextStyle(
-                          color: case_.isSynced ? const Color(0xFF28A745) : const Color(0xFFDC3545),
-                        ),
-                      ),
-                      Text(
-                        '$taskCount task${taskCount != 1 ? 's' : ''}',
-                        style: const TextStyle(
-                          color: Color(0xFF6C757D),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
-                  value: selectedCases.contains(case_),
-                  onChanged: (bool? value) {
-                    setDialogState(() {
-                      if (value == true) {
-                        selectedCases.add(case_);
-                      } else {
-                        selectedCases.remove(case_);
-                      }
-                    });
-                  },
-                );
-              },
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: selectedCases.isEmpty ? null : () {
-                Navigator.pop(context);
-                _syncSelectedCases(selectedCases.toList());
-              },
-              child: const Text('Sync Selected'),
-            ),
-          ],
+  Future<void> _syncAllData() async {
+    final success = await syncService.performSync();
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('All data synchronized successfully!'),
+          backgroundColor: Color(0xFF28A745),
         ),
+      );
+    } else {
+      throw Exception('Sync operation failed');
+    }
+  }
+
+  Future<void> _syncCasesOnly() async {
+    final pendingCases = syncService.getPendingCases();
+    if (pendingCases.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No pending cases to sync'),
+          backgroundColor: Color(0xFF6C757D),
+        ),
+      );
+      return;
+    }
+
+    int syncedCount = 0;
+    for (var case_ in pendingCases) {
+      final success = await syncService.syncCase(case_);
+      if (success) syncedCount++;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$syncedCount cases synchronized successfully!'),
+        backgroundColor: const Color(0xFF28A745),
       ),
     );
   }
 
-  void _syncSelectedCases(List<Cases> casesToSync) async {
-    setState(() {
-      _isSyncing = true;
-    });
-
-    try {
-      final syncTime = DateTime.now();
-      int totalTasksSynced = 0;
-      
-      for (var case_ in casesToSync) {
-        case_.isSynced = true;
-        case_.lastSyncedAt = syncTime;
-        case_.syncStatus = 'synced';
-        case_.updatedAt = syncTime;
-        
-        // Sync all tasks in this case
-        final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
-        for (var task in tasks) {
-          task.isSynced = true;
-          task.updatedAt = syncTime;
-        }
-        taskBox.putMany(tasks);
-        totalTasksSynced += tasks.length;
-      }
-      
-      caseBox.putMany(casesToSync);
-      
-      await Future.delayed(const Duration(seconds: 2)); // Simulate network delay
-      
+  Future<void> _syncTasksOnly() async {
+    final pendingTasks = syncService.getPendingTasks();
+    if (pendingTasks.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${casesToSync.length} cases and $totalTasksSynced tasks synchronized successfully!'),
-          backgroundColor: const Color(0xFF28A745),
+        const SnackBar(
+          content: Text('No pending tasks to sync'),
+          backgroundColor: Color(0xFF6C757D),
         ),
       );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sync failed: $e'),
-          backgroundColor: const Color(0xFFDC3545),
-        ),
-      );
-    } finally {
-      setState(() {
-        _isSyncing = false;
-      });
+      return;
     }
+
+    int syncedCount = 0;
+    for (var task in pendingTasks) {
+      final success = await syncService.syncTask(task);
+      if (success) syncedCount++;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$syncedCount tasks synchronized successfully!'),
+        backgroundColor: const Color(0xFF28A745),
+      ),
+    );
   }
 
-  void _syncSingleCase(Cases case_) async {
-    try {
-      final syncTime = DateTime.now();
-      case_.isSynced = true;
-      case_.lastSyncedAt = syncTime;
-      case_.syncStatus = 'synced';
-      case_.updatedAt = syncTime;
-      
-      // Sync all tasks in this case
-      final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
-      for (var task in tasks) {
-        task.isSynced = true;
-        task.updatedAt = syncTime;
-      }
-      taskBox.putMany(tasks);
-      
-      caseBox.put(case_);
-      
-      await Future.delayed(const Duration(seconds: 1)); // Simulate network delay
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Case "${case_.name}" and ${tasks.length} tasks synchronized successfully!'),
-          backgroundColor: const Color(0xFF28A745),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Sync failed: $e'),
-          backgroundColor: const Color(0xFFDC3545),
-        ),
-      );
-    }
-  }
-
-  void _logout() {
+  void _showSyncStatus() {
+    final stats = syncService.getSyncStats();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFFF8F9FA),
-        title: const Text('Logout', style: TextStyle(color: Color(0xFF6C757D))),
-        content: const Text(
-          'Are you sure you want to logout?',
-          style: TextStyle(color: Color(0xFF495057)),
+        title: const Text('Sync Status'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Total Cases: ${stats['totalCases']}'),
+            Text('Synced Cases: ${stats['syncedCases']}'),
+            Text('Pending Cases: ${stats['pendingCases']}'),
+            const SizedBox(height: 16),
+            Text('Total Tasks: ${stats['totalTasks']}'),
+            Text('Synced Tasks: ${stats['syncedTasks']}'),
+            Text('Pending Tasks: ${stats['pendingTasks']}'),
+            const SizedBox(height: 16),
+            Text(
+              'Status: ${syncService.getSyncStatusMessage()}',
+              style: TextStyle(
+                color: syncService.hasPendingSyncs() 
+                  ? const Color(0xFFFFC107) 
+                  : const Color(0xFF28A745),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel', style: TextStyle(color: Color(0xFF6C757D))),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const LoginScreen()),
-                (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFDC3545),
-            ),
-            child: const Text('Logout', style: TextStyle(color: Colors.white)),
+            child: const Text('Close'),
           ),
         ],
       ),
     );
   }
 
-  void _autoSyncSingleCase(Cases case_) async {
-    setState(() {
-      _isAutoSyncing = true;
-    });
-    
+  void _syncSingleCase(Cases case_) async {
     try {
-      final syncTime = DateTime.now();
-      case_.isSynced = true;
-      case_.lastSyncedAt = syncTime;
-      case_.syncStatus = 'synced';
-      case_.updatedAt = syncTime;
-      
-      // Sync all tasks in this case
-      final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
-      for (var task in tasks) {
-        task.isSynced = true;
-        task.updatedAt = syncTime;
+      final success = await syncService.syncCase(case_);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Case "${case_.name}" synchronized successfully!'),
+            backgroundColor: const Color(0xFF28A745),
+          ),
+        );
+      } else {
+        throw Exception('Sync failed');
       }
-      taskBox.putMany(tasks);
-      
-      caseBox.put(case_);
-      
-      await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-      
+    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Case "${case_.name}" and ${tasks.length} tasks auto-synced!'),
-          backgroundColor: const Color(0xFF28A745),
-          duration: const Duration(seconds: 2),
+          content: Text('Sync failed: $e'),
+          backgroundColor: const Color(0xFFDC3545),
         ),
       );
-    } catch (e) {
-      // Don't show error for auto-sync, just log it
-      print('Auto-sync failed for case ${case_.name}: $e');
-    } finally {
-      setState(() {
-        _isAutoSyncing = false;
-      });
     }
   }
 
@@ -565,8 +436,34 @@ class _CaseListScreenState extends State<CaseListScreen> {
     caseBox.put(case_);
     
     // Auto-sync if online
-    if (_isOnline) {
+    if (await syncService.isOnline()) {
       _autoSyncSingleCase(case_);
+    }
+  }
+
+  void _autoSyncSingleCase(Cases case_) async {
+    setState(() {
+      _isAutoSyncing = true;
+    });
+    
+    try {
+      final success = await syncService.syncCase(case_);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Case "${case_.name}" auto-synced!'),
+            backgroundColor: const Color(0xFF28A745),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      // Don't show error for auto-sync, just log it
+      print('Auto-sync failed for case ${case_.name}: $e');
+    } finally {
+      setState(() {
+        _isAutoSyncing = false;
+      });
     }
   }
 
@@ -627,10 +524,10 @@ class _CaseListScreenState extends State<CaseListScreen> {
             icon: const Icon(Icons.add, color: Color(0xFF2196F3)),
             tooltip: 'Add Case',
           ),
-          // Only show sync button when online
+          // Global sync button - simple one-click sync
           if (_isOnline)
             IconButton(
-              onPressed: _isSyncing ? null : _showSyncOptions,
+              onPressed: _isSyncing ? null : _syncData,
               icon: _isSyncing
                   ? const SizedBox(
                       width: 20,
@@ -641,6 +538,13 @@ class _CaseListScreenState extends State<CaseListScreen> {
                       ),
                     )
                   : const Icon(Icons.sync, color: Color(0xFF2196F3)),
+              tooltip: 'Sync All Data',
+            ),
+          // Sync options button - detailed sync options
+          if (_isOnline)
+            IconButton(
+              onPressed: _isSyncing ? null : _showSyncOptions,
+              icon: const Icon(Icons.more_vert, color: Color(0xFF2196F3)),
               tooltip: 'Sync Options',
             ),
           IconButton(

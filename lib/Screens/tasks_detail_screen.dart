@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../entities.dart';
 import '../main.dart';
+import '../services/user_service.dart';
 import '../widgets/offline_indicator.dart';
 import 'dart:typed_data';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import '../services/sync_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();
@@ -62,7 +64,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     widget.task.isCompleted = isCompleted;
     widget.task.priority = priority;
     widget.task.updatedAt = DateTime.now();
-    widget.task.updatedBy = 'Current User'; // You can replace this with actual user info
+    widget.task.updatedBy = userService.getCurrentUserEmail(); // Use actual user email
     widget.task.isSynced = false; // Mark as needing sync
 
     try{
@@ -86,22 +88,18 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     });
 
     try {
-      final syncTime = DateTime.now();
-      widget.task.isSynced = true;
-      widget.task.updatedAt = syncTime;
-      widget.task.updatedBy = 'Current User'; // You can replace this with actual user info
-      
-      taskBox.put(widget.task);
-      
-      await Future.delayed(const Duration(milliseconds: 500)); // Simulate network delay
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Task synced successfully!'),
-          backgroundColor: Color(0xFF28A745),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      final success = await syncService.syncTask(widget.task);
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Task synced successfully!'),
+            backgroundColor: Color(0xFF28A745),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      } else {
+        throw Exception('Sync operation failed');
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -137,7 +135,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         // Mark task as needing sync
         widget.task.isSynced = false;
         widget.task.updatedAt = DateTime.now();
-        widget.task.updatedBy = 'Current User';
+        widget.task.updatedBy = userService.getCurrentUserEmail(); // Use actual user email
         taskBox.put(widget.task);
         
         setState(() {
@@ -178,7 +176,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       // Mark task as needing sync
       widget.task.isSynced = false;
       widget.task.updatedAt = DateTime.now();
-      widget.task.updatedBy = 'Current User';
+      widget.task.updatedBy = userService.getCurrentUserEmail(); // Use actual user email
       taskBox.put(widget.task);
       
       setState(() {
@@ -360,7 +358,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // Task metadata
+                          // Task metadata - Updated timestamp
                           Row(
                             children: [
                               Icon(
@@ -376,24 +374,32 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   color: Color(0xFF9E9E9E),
                                 ),
                               ),
-                              const SizedBox(width: 16),
-                              if (widget.task.updatedBy.isNotEmpty) ...[
+                            ],
+                          ),
+                          // Updated by information - separate row
+                          if (widget.task.updatedBy.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
                                 Icon(
                                   Icons.person,
                                   size: 12,
                                   color: const Color(0xFF9E9E9E),
                                 ),
                                 const SizedBox(width: 4),
-                                Text(
-                                  'By: ${widget.task.updatedBy}',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    color: Color(0xFF9E9E9E),
+                                Expanded(
+                                  child: Text(
+                                    'By: ${widget.task.updatedBy}',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Color(0xFF9E9E9E),
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
                               ],
-                            ],
-                          ),
+                            ),
+                          ],
                           if (widget.task.isSynced)
                             const SizedBox(height: 8),
                           if (widget.task.isSynced)
