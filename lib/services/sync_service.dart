@@ -12,6 +12,7 @@ class SyncService {
 
   final taskBox = objectbox.store.box<Task>();
   final casesBox = objectbox.store.box<Cases>();
+  final siteBox = objectbox.store.box<Site>();
   final Connectivity _connectivity = Connectivity();
 
   // Check if device is online
@@ -36,6 +37,14 @@ class SyncService {
     return cases;
   }
 
+  // Get all sites that need syncing
+  List<Site> getPendingSites() {
+    final query = siteBox.query(Site_.isSynced.equals(false)).build();
+    final sites = query.find();
+    query.close();
+    return sites;
+  }
+
   // Mark task as synced
   void markTaskAsSynced(Task task) {
     task.isSynced = true;
@@ -52,26 +61,40 @@ class SyncService {
     casesBox.put(case_);
   }
 
+  // Mark site as synced
+  void markSiteAsSynced(Site site) {
+    site.isSynced = true;
+    site.updatedAt = DateTime.now();
+    site.lastSyncedAt = DateTime.now();
+    site.syncStatus = 'synced';
+    siteBox.put(site);
+  }
+
   // Get sync statistics
   Map<String, int> getSyncStats() {
     final pendingTasks = getPendingTasks().length;
     final pendingCases = getPendingCases().length;
+    final pendingSites = getPendingSites().length;
     final totalTasks = taskBox.count();
     final totalCases = casesBox.count();
+    final totalSites = siteBox.count();
 
     return {
       'pendingTasks': pendingTasks,
       'pendingCases': pendingCases,
+      'pendingSites': pendingSites,
       'totalTasks': totalTasks,
       'totalCases': totalCases,
+      'totalSites': totalSites,
       'syncedTasks': totalTasks - pendingTasks,
       'syncedCases': totalCases - pendingCases,
+      'syncedSites': totalSites - pendingSites,
     };
   }
 
   // Check if there are any pending syncs
   bool hasPendingSyncs() {
-    return getPendingTasks().isNotEmpty || getPendingCases().isNotEmpty;
+    return getPendingTasks().isNotEmpty || getPendingCases().isNotEmpty || getPendingSites().isNotEmpty;
   }
 
   // Get sync status message
@@ -79,11 +102,16 @@ class SyncService {
     final stats = getSyncStats();
     final pendingTasks = stats['pendingTasks'] ?? 0;
     final pendingCases = stats['pendingCases'] ?? 0;
+    final pendingSites = stats['pendingSites'] ?? 0;
 
-    if (pendingTasks == 0 && pendingCases == 0) {
+    if (pendingTasks == 0 && pendingCases == 0 && pendingSites == 0) {
       return 'All data is synced';
     } else {
-      return '$pendingTasks tasks and $pendingCases cases pending sync';
+      final parts = <String>[];
+      if (pendingSites > 0) parts.add('$pendingSites sites');
+      if (pendingCases > 0) parts.add('$pendingCases cases');
+      if (pendingTasks > 0) parts.add('$pendingTasks tasks');
+      return '${parts.join(', ')} pending sync';
     }
   }
 
@@ -96,8 +124,9 @@ class SyncService {
     try {
       final pendingTasks = getPendingTasks();
       final pendingCases = getPendingCases();
+      final pendingSites = getPendingSites();
 
-      if (pendingTasks.isEmpty && pendingCases.isEmpty) {
+      if (pendingTasks.isEmpty && pendingCases.isEmpty && pendingSites.isEmpty) {
         return true; // Nothing to sync
       }
 
@@ -116,6 +145,13 @@ class SyncService {
         case_.syncStatus = 'synced';
         case_.updatedAt = syncTime;
         casesBox.put(case_);
+      }
+      for (var site in pendingSites) {
+        site.isSynced = true;
+        site.lastSyncedAt = syncTime;
+        site.syncStatus = 'synced';
+        site.updatedAt = syncTime;
+        siteBox.put(site);
       }
 
       return true;
@@ -175,18 +211,46 @@ class SyncService {
     }
   }
 
+  // Sync specific site
+  Future<bool> syncSite(Site site) async {
+    if (!await isOnline()) {
+      throw Exception('No internet connection available');
+    }
+
+    try {
+      await Future.delayed(const Duration(milliseconds: 500));
+      final syncTime = DateTime.now();
+      site.isSynced = true;
+      site.lastSyncedAt = syncTime;
+      site.syncStatus = 'synced';
+      site.updatedAt = syncTime;
+      siteBox.put(site);
+      return true;
+    } catch (e) {
+      print('Site sync failed: $e');
+      return false;
+    }
+  }
+
   // Get sync options for UI
   List<Map<String, dynamic>> getSyncOptions() {
     final stats = getSyncStats();
     final pendingTasks = stats['pendingTasks'] ?? 0;
     final pendingCases = stats['pendingCases'] ?? 0;
+    final pendingSites = stats['pendingSites'] ?? 0;
 
     return [
       {
         'title': 'Sync All Data',
-        'subtitle': 'Sync all pending cases and tasks',
+        'subtitle': 'Sync all pending sites, cases and tasks',
         'icon': Icons.sync,
-        'enabled': pendingTasks > 0 || pendingCases > 0,
+        'enabled': pendingTasks > 0 || pendingCases > 0 || pendingSites > 0,
+      },
+      {
+        'title': 'Sync Sites Only',
+        'subtitle': 'Sync only pending sites',
+        'icon': Icons.location_on,
+        'enabled': pendingSites > 0,
       },
       {
         'title': 'Sync Cases Only',

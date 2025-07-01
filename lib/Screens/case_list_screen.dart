@@ -256,6 +256,9 @@ class _CaseListScreenState extends State<CaseListScreen> {
         case 'Sync All Data':
           await _syncAllData();
           break;
+        case 'Sync Sites Only':
+          await _syncSitesOnly();
+          break;
         case 'Sync Cases Only':
           await _syncCasesOnly();
           break;
@@ -320,6 +323,32 @@ class _CaseListScreenState extends State<CaseListScreen> {
     );
   }
 
+  Future<void> _syncSitesOnly() async {
+    final pendingSites = syncService.getPendingSites();
+    if (pendingSites.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No pending sites to sync'),
+          backgroundColor: Color(0xFF6C757D),
+        ),
+      );
+      return;
+    }
+
+    int syncedCount = 0;
+    for (var site in pendingSites) {
+      final success = await syncService.syncSite(site);
+      if (success) syncedCount++;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$syncedCount sites synchronized successfully!'),
+        backgroundColor: const Color(0xFF28A745),
+      ),
+    );
+  }
+
   Future<void> _syncTasksOnly() async {
     final pendingTasks = syncService.getPendingTasks();
     if (pendingTasks.isEmpty) {
@@ -356,6 +385,10 @@ class _CaseListScreenState extends State<CaseListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text('Total Sites: ${stats['totalSites']}'),
+            Text('Synced Sites: ${stats['syncedSites']}'),
+            Text('Pending Sites: ${stats['pendingSites']}'),
+            const SizedBox(height: 16),
             Text('Total Cases: ${stats['totalCases']}'),
             Text('Synced Cases: ${stats['syncedCases']}'),
             Text('Pending Cases: ${stats['pendingCases']}'),
@@ -527,11 +560,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
               icon: const Icon(Icons.more_vert, color: Color(0xFF2196F3)),
               tooltip: 'Sync Options',
             ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout, color: Color(0xFF2196F3)),
-            tooltip: 'Logout',
-          ),
+
           const SizedBox(width: 8),
         ],
       ),
@@ -678,30 +707,24 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                             Container(
                                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                               decoration: BoxDecoration(
-                                                color: case_.isSynced 
-                                                  ? const Color(0xFFE8F5E8) 
-                                                  : const Color(0xFFFFEBEE),
+                                                color: const Color(0xFFE8F5E8),
                                                 borderRadius: BorderRadius.circular(12),
                                               ),
                                               child: Row(
                                                 mainAxisSize: MainAxisSize.min,
                                                 children: [
-                                                  Icon(
-                                                    case_.isSynced ? Icons.check_circle : Icons.sync,
+                                                  const Icon(
+                                                    Icons.check_circle,
                                                     size: 14,
-                                                    color: case_.isSynced 
-                                                      ? const Color(0xFF28A745) 
-                                                      : const Color(0xFFDC3545),
+                                                    color: Color(0xFF28A745),
                                                   ),
                                                   const SizedBox(width: 4),
-                                                  Text(
-                                                    case_.isSynced ? 'Synced' : 'Pending',
+                                                  const Text(
+                                                    'Saved',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       fontWeight: FontWeight.w600,
-                                                      color: case_.isSynced 
-                                                        ? const Color(0xFF28A745) 
-                                                        : const Color(0xFFDC3545),
+                                                      color: Color(0xFF28A745),
                                                     ),
                                                   ),
                                                 ],
@@ -746,36 +769,20 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                           ),
                                         ],
                                         const SizedBox(height: 8),
-                                        // Last synced timestamp
-                                        if (case_.isSynced && case_.lastSyncedAt != null)
-                                          Text(
-                                            'Last synced: ${case_.lastSyncedAt!.toString().substring(0, 19)}',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Color(0xFF9E9E9E),
-                                            ),
+                                        // Created timestamp
+                                        Text(
+                                          'Created: ${case_.createdAt.toString().substring(0, 19)}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xFF9E9E9E),
                                           ),
+                                        ),
                                       ],
                                     ),
                                   ),
                                   const SizedBox(width: 16),
                                   Column(
                                     children: [
-                                      // Individual sync button - only show when online
-                                      if (_isOnline)
-                                        IconButton(
-                                          icon: Icon(
-                                            Icons.sync,
-                                            color: !_isSyncing 
-                                              ? const Color(0xFF2196F3) 
-                                              : const Color(0xFFB0BEC5),
-                                          ),
-                                          onPressed: !_isSyncing 
-                                            ? () => _syncSingleCase(case_)
-                                            : null,
-                                          tooltip: 'Sync this case',
-                                        ),
-                                      const SizedBox(height: 8),
                                       // View case button
                                       IconButton(
                                         icon: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF2196F3)),

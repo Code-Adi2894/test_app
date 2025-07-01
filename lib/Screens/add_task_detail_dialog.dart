@@ -11,6 +11,7 @@ final taskBox = objectbox.store.box<Task>();
 void showCustomDialog(BuildContext context, Cases case_) {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
+  TextEditingController reviewNotesController = TextEditingController();
   bool isCompleted = false;
   String priority = "LOW";
   var levels = ["LOW", "MEDIUM", "HIGH"];
@@ -51,6 +52,16 @@ void showCustomDialog(BuildContext context, Cases case_) {
                     decoration: const InputDecoration(
                       labelText: 'Description',
                       border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: reviewNotesController,
+                    maxLines: 3,
+                    decoration: const InputDecoration(
+                      labelText: 'Review Notes',
+                      border: OutlineInputBorder(),
+                      hintText: 'Add review notes, comments, or observations...',
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -119,6 +130,7 @@ void showCustomDialog(BuildContext context, Cases case_) {
                   final task = Task(
                     title: title, 
                     description: description, 
+                    reviewNotes: reviewNotesController.text.trim(),
                     isCompleted: isCompleted, 
                     priority: priority,
                     isSynced: false, // Mark as needing sync

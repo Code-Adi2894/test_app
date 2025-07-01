@@ -1,16 +1,12 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import '../entities.dart';
 import '../main.dart';
 import '../services/user_service.dart';
 import '../widgets/offline_indicator.dart';
-import 'dart:typed_data';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/sync_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
-final taskImageBox = objectbox.store.box<TaskImage>();
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -23,10 +19,10 @@ class TaskDetailScreen extends StatefulWidget {
 class _TaskDetailScreenState extends State<TaskDetailScreen> {
   late TextEditingController titleController;
   late TextEditingController descriptionController;
+  late TextEditingController reviewNotesController;
   bool isCompleted = false;
   String priority = '';
   var levels = ["LOW", "MEDIUM", "HIGH"];
-  File? imageFile;
   bool _isOnline = true;
   bool _isSyncing = false;
   late final Connectivity _connectivity;
@@ -36,6 +32,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     super.initState();
     titleController = TextEditingController(text: widget.task.title);
     descriptionController = TextEditingController(text: widget.task.description);
+    reviewNotesController = TextEditingController(text: widget.task.reviewNotes);
     isCompleted = widget.task.isCompleted;
     priority = widget.task.priority;
     
@@ -55,12 +52,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   void dispose(){
     titleController.dispose();
     descriptionController.dispose();
+    reviewNotesController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
     widget.task.title = titleController.text;
     widget.task.description = descriptionController.text;
+    widget.task.reviewNotes = reviewNotesController.text;
     widget.task.isCompleted = isCompleted;
     widget.task.priority = priority;
     widget.task.updatedAt = DateTime.now();
@@ -115,108 +114,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-  void _pickImage() async {
-    try {
-      final picker = ImagePicker();
-      final pickedFile = await picker.pickImage(
-        source: ImageSource.gallery,
-        maxWidth: 1024, // Limit image size
-        maxHeight: 1024,
-        imageQuality: 85, // Compress image
-      );
-      if (pickedFile != null) {
-        final bytes = await pickedFile.readAsBytes();
-        
-        // Save image to database
-        final taskImage = TaskImage(imageBytes: bytes);
-        taskImage.task.target = widget.task;
-        taskImageBox.put(taskImage);
-        
-        // Mark task as needing sync
-        widget.task.isSynced = false;
-        widget.task.updatedAt = DateTime.now();
-        widget.task.updatedBy = userService.getCurrentUserEmail(); // Use actual user email
-        taskBox.put(widget.task);
-        
-        setState(() {
-          // Refresh the UI to show the new image
-        });
-        
-        // Auto-sync if online
-        if (_isOnline) {
-          _syncTask();
-        }
-        
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Image added successfully!'),
-            backgroundColor: Color(0xFF28A745),
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
-    } catch (e) {
-      print('Error picking image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error adding image: $e'),
-          backgroundColor: const Color(0xFFDC3545),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
 
-  void _removeImage(TaskImage taskImage) async {
-    try {
-      // Remove image from database
-      taskImageBox.remove(taskImage.id);
-      
-      // Mark task as needing sync
-      widget.task.isSynced = false;
-      widget.task.updatedAt = DateTime.now();
-      widget.task.updatedBy = userService.getCurrentUserEmail(); // Use actual user email
-      taskBox.put(widget.task);
-      
-      setState(() {
-        // Refresh the UI
-      });
-      
-      // Auto-sync if online
-      if (_isOnline) {
-        _syncTask();
-      }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Image removed successfully!'),
-          backgroundColor: Color(0xFF28A745),
-          duration: Duration(seconds: 2),
-        ),
-      );
-    } catch (e) {
-      print('Error removing image: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error removing image: $e'),
-          backgroundColor: const Color(0xFFDC3545),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-    }
-  }
-
-  List<TaskImage> _getTaskImages() {
-    // Use getAll and filter since TaskImage_ is not being generated properly
-    final allImages = taskImageBox.getAll();
-    return allImages.where((image) => image.task.target?.id == widget.task.id).toList();
-  }
 
   @override
   Widget build(BuildContext context) {
-    final taskImages = _getTaskImages();
-    
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -416,8 +317,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Images Section
-                  if (taskImages.isNotEmpty) ...[
+                  // Review Notes Section
+                  if (widget.task.reviewNotes.isNotEmpty) ...[
                     Container(
                       decoration: BoxDecoration(
                         color: Colors.white,
@@ -437,90 +338,38 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           children: [
                             Row(
                               children: [
+                                const Icon(
+                                  Icons.rate_review,
+                                  color: Color(0xFF2196F3),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
                                 const Text(
-                                  'Images',
+                                  'Review Notes',
                                   style: TextStyle(
                                     fontSize: 18,
                                     fontWeight: FontWeight.bold,
                                     color: Color(0xFF495057),
                                   ),
                                 ),
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFFE3F2FD),
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    '${taskImages.length}',
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF2196F3),
-                                    ),
-                                  ),
-                                ),
                               ],
                             ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 120,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: taskImages.length,
-                                itemBuilder: (context, index) {
-                                  final taskImage = taskImages[index];
-                                  return Stack(
-                                    children: [
-                                      Container(
-                                        margin: const EdgeInsets.only(right: 12),
-                                        width: 120,
-                                        height: 120,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
-                                          border: Border.all(color: const Color(0xFFE0E0E0)),
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(12),
-                                          child: Image.memory(
-                                            Uint8List.fromList(taskImage.imageBytes),
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) {
-                                              return Container(
-                                                color: const Color(0xFFF5F5F5),
-                                                child: const Icon(
-                                                  Icons.broken_image,
-                                                  color: Color(0xFF9E9E9E),
-                                                ),
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                      // Remove button
-                                      Positioned(
-                                        top: 4,
-                                        right: 16,
-                                        child: GestureDetector(
-                                          onTap: () => _removeImage(taskImage),
-                                          child: Container(
-                                            padding: const EdgeInsets.all(4),
-                                            decoration: const BoxDecoration(
-                                              color: Color(0xFFDC3545),
-                                              shape: BoxShape.circle,
-                                            ),
-                                            child: const Icon(
-                                              Icons.close,
-                                              size: 16,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  );
-                                },
+                            const SizedBox(height: 12),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF8F9FA),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xFFE0E0E0)),
+                              ),
+                              child: Text(
+                                widget.task.reviewNotes,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF495057),
+                                  height: 1.5,
+                                ),
                               ),
                             ),
                           ],
@@ -593,6 +442,27 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               ),
                             ),
                           ),
+                          const SizedBox(height: 16),
+
+                          // Review Notes Field
+                          Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF8F9FA),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: TextField(
+                              controller: reviewNotesController,
+                              maxLines: 4,
+                              decoration: const InputDecoration(
+                                labelText: 'Review Notes',
+                                border: InputBorder.none,
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                hintText: 'Add review notes, comments, or observations...',
+                                hintStyle: TextStyle(color: Color(0xFFADB5BD)),
+                              ),
+                            ),
+                          ),
                           const SizedBox(height: 20),
 
                           // Completed Checkbox
@@ -644,25 +514,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-
-                          // Add Image Button - only show when online
-                          if (_isOnline)
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton.icon(
-                                onPressed: _pickImage,
-                                icon: const Icon(Icons.add_photo_alternate),
-                                label: const Text('Add Image'),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF2196F3),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                              ),
-                            ),
                         ],
                       ),
                     ),

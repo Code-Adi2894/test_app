@@ -63,8 +63,8 @@ class _AddCaseDialogState extends State<AddCaseDialog> {
         description: _descriptionController.text.trim().isEmpty 
             ? null 
             : _descriptionController.text.trim(),
-        isSynced: false,
-        syncStatus: 'pending',
+        isSynced: true, // Since it's saved to local database immediately
+        syncStatus: 'synced', // Local database is synced
       );
 
       // Set the site relationship

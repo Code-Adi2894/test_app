@@ -49,7 +49,6 @@ class Task {
   int id;
   String title;
   String description;
-  List<int>? image;
   bool isCompleted;
   bool isSynced;
   String priority;
@@ -63,7 +62,6 @@ class Task {
     this.id = 0,
     required this.title,
     required this.description,
-    this.image,
     this.isCompleted = false,
     this.isSynced = false,
     this.priority = "LOW",
@@ -73,18 +71,7 @@ class Task {
   }) : updatedAt = updatedAt ?? DateTime.now();
 }
 
-@Entity()
-@Sync()
-class TaskImage {
-  int id = 0;
 
-  @Property(type: PropertyType.byteVector)
-  List<int> imageBytes;
-
-  final task = ToOne<Task>();
-
-  TaskImage({required this.imageBytes});
-}
 
 @Entity()
 @Sync()
