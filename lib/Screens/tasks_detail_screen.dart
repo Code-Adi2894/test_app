@@ -571,18 +571,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               final picker = ImagePicker();
                               final pickedFile = await picker.pickImage(source: ImageSource.gallery);
                               if (pickedFile != null) {
+                                final bytes = await pickedFile.readAsBytes();
+                                final taskImage = TaskImage(imageBytes: bytes);
+                                taskImage.task.target = widget.task;
+
+                                final imageId = taskImageBox.put(taskImage);
+                                taskImage.id = imageId;
                                 setState(() {
                                   imageFile = File(pickedFile.path);
                                 });
                                 
-                                // Convert to bytes and save to database
-                                final bytes = await imageFile!.readAsBytes();
-                                final taskImage = TaskImage(imageBytes: bytes);
-                                taskImage.task.target = widget.task;
-                                
-                                final imageId = taskImageBox.put(taskImage);
-                                taskImage.id = imageId;
-                                
+
                                 // Update task
                                 widget.task.isSynced = false;
                                 widget.task.updatedAt = DateTime.now();

@@ -20,65 +20,65 @@ export 'package:objectbox/objectbox.dart'; // so that callers only have to impor
 
 final _entities = <obx_int.ModelEntity>[
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(1, 3755552323493559785),
+    id: const obx_int.IdUid(1, 4873119829113171384),
     name: 'Cases',
-    lastPropertyId: const obx_int.IdUid(9, 8733720932525051201),
+    lastPropertyId: const obx_int.IdUid(9, 106162468620504214),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 1977007924579109981),
+        id: const obx_int.IdUid(1, 1769265262041906205),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 8508733435846715257),
+        id: const obx_int.IdUid(2, 5752890352437171529),
         name: 'name',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 3231721956243315972),
+        id: const obx_int.IdUid(3, 2572922752303441174),
         name: 'description',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 8941912301819750039),
+        id: const obx_int.IdUid(4, 3439896955898265972),
         name: 'createdAt',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(5, 8693270789904093193),
+        id: const obx_int.IdUid(5, 8440763323913247855),
         name: 'updatedAt',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(6, 2325319151059094579),
+        id: const obx_int.IdUid(6, 6537473937581151975),
         name: 'isSynced',
         type: 1,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(7, 4224110367572654579),
+        id: const obx_int.IdUid(7, 8609555661624153773),
         name: 'lastSyncedAt',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(8, 3934224790410177210),
+        id: const obx_int.IdUid(8, 6529980017736565607),
         name: 'syncStatus',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(9, 8733720932525051201),
+        id: const obx_int.IdUid(9, 106162468620504214),
         name: 'siteId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(1, 2054164891148984178),
+        indexId: const obx_int.IdUid(1, 7331015984087932667),
         relationTarget: 'Site',
       ),
     ],
@@ -88,43 +88,43 @@ final _entities = <obx_int.ModelEntity>[
     ],
   ),
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(2, 9193283855703065600),
+    id: const obx_int.IdUid(2, 920162419277596008),
     name: 'Site',
-    lastPropertyId: const obx_int.IdUid(6, 3422728901821214680),
+    lastPropertyId: const obx_int.IdUid(6, 2992980785259616978),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 831163090075915507),
+        id: const obx_int.IdUid(1, 2341754779353075563),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 661549511998876572),
+        id: const obx_int.IdUid(2, 9079697427171428776),
         name: 'name',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 5457584339775753440),
+        id: const obx_int.IdUid(3, 841587751512148470),
         name: 'address',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 6644276473429155604),
+        id: const obx_int.IdUid(4, 554998623644320559),
         name: 'description',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(5, 8937219182343465171),
+        id: const obx_int.IdUid(5, 2802860419878042280),
         name: 'createdAt',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(6, 3422728901821214680),
+        id: const obx_int.IdUid(6, 2992980785259616978),
         name: 'updatedAt',
         type: 10,
         flags: 0,
@@ -136,71 +136,71 @@ final _entities = <obx_int.ModelEntity>[
     ],
   ),
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(3, 1294200496906003798),
+    id: const obx_int.IdUid(3, 5523716323971535329),
     name: 'Task',
-    lastPropertyId: const obx_int.IdUid(10, 4213939504744760169),
+    lastPropertyId: const obx_int.IdUid(10, 4340906426320533233),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 9144392272931859779),
+        id: const obx_int.IdUid(1, 7312416862498068503),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 7110249884147178061),
+        id: const obx_int.IdUid(2, 5303643554472060808),
         name: 'title',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 1553134082343590905),
+        id: const obx_int.IdUid(3, 1211953196687937859),
         name: 'description',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 721769729393705245),
+        id: const obx_int.IdUid(4, 3478248103217345161),
         name: 'isCompleted',
         type: 1,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(5, 6707054996157271234),
+        id: const obx_int.IdUid(5, 1217585125058269784),
         name: 'isSynced',
         type: 1,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(6, 4386800205549018613),
+        id: const obx_int.IdUid(6, 1564052744368945928),
         name: 'priority',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(7, 9011940548012240562),
+        id: const obx_int.IdUid(7, 2634405087306176988),
         name: 'reviewNotes',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(8, 3885746484986206274),
+        id: const obx_int.IdUid(8, 7209508199337796382),
         name: 'updatedAt',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(9, 4347584327861979093),
+        id: const obx_int.IdUid(9, 5822753101768625479),
         name: 'updatedBy',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(10, 4213939504744760169),
+        id: const obx_int.IdUid(10, 4340906426320533233),
         name: 'casesId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(2, 3328648193720001020),
+        indexId: const obx_int.IdUid(2, 8001343916308544529),
         relationTarget: 'Cases',
       ),
     ],
@@ -214,35 +214,35 @@ final _entities = <obx_int.ModelEntity>[
     ],
   ),
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(4, 909709937778789299),
+    id: const obx_int.IdUid(4, 7781541688190921407),
     name: 'TaskImage',
-    lastPropertyId: const obx_int.IdUid(4, 3511243783442871627),
+    lastPropertyId: const obx_int.IdUid(4, 5957233182023820832),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 4380430499524518527),
+        id: const obx_int.IdUid(1, 3468087768438461807),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 191555597187037668),
+        id: const obx_int.IdUid(2, 7925552813950673158),
         name: 'imageBytes',
-        type: 27,
+        type: 23,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 7570893594332020434),
+        id: const obx_int.IdUid(3, 4660829273531509102),
         name: 'createdAt',
         type: 10,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(4, 3511243783442871627),
+        id: const obx_int.IdUid(4, 5957233182023820832),
         name: 'taskId',
         type: 11,
         flags: 520,
-        indexId: const obx_int.IdUid(3, 1807994218771385085),
+        indexId: const obx_int.IdUid(3, 7894819684363007124),
         relationTarget: 'Task',
       ),
     ],
@@ -250,25 +250,25 @@ final _entities = <obx_int.ModelEntity>[
     backlinks: <obx_int.ModelBacklink>[],
   ),
   obx_int.ModelEntity(
-    id: const obx_int.IdUid(5, 2146217473349347675),
+    id: const obx_int.IdUid(5, 9090076859559148059),
     name: 'User',
-    lastPropertyId: const obx_int.IdUid(3, 6989618329451451563),
+    lastPropertyId: const obx_int.IdUid(3, 7720950435403884251),
     flags: 2,
     properties: <obx_int.ModelProperty>[
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(1, 2684632649764427912),
+        id: const obx_int.IdUid(1, 6761924076881871763),
         name: 'id',
         type: 6,
         flags: 1,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(2, 5498644003583712921),
+        id: const obx_int.IdUid(2, 1097526138859770049),
         name: 'email',
         type: 9,
         flags: 0,
       ),
       obx_int.ModelProperty(
-        id: const obx_int.IdUid(3, 6989618329451451563),
+        id: const obx_int.IdUid(3, 7720950435403884251),
         name: 'password',
         type: 9,
         flags: 0,
@@ -317,8 +317,8 @@ Future<obx.Store> openStore({
 obx_int.ModelDefinition getObjectBoxModel() {
   final model = obx_int.ModelInfo(
     entities: _entities,
-    lastEntityId: const obx_int.IdUid(5, 2146217473349347675),
-    lastIndexId: const obx_int.IdUid(3, 1807994218771385085),
+    lastEntityId: const obx_int.IdUid(5, 9090076859559148059),
+    lastIndexId: const obx_int.IdUid(3, 7894819684363007124),
     lastRelationId: const obx_int.IdUid(0, 0),
     lastSequenceId: const obx_int.IdUid(0, 0),
     retiredEntityUids: const [],
@@ -619,7 +619,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
         object.id = id;
       },
       objectToFB: (TaskImage object, fb.Builder fbb) {
-        final imageBytesOffset = fbb.writeListInt64(object.imageBytes);
+        final imageBytesOffset = fbb.writeListInt8(object.imageBytes);
         fbb.startTable(5);
         fbb.addInt64(0, object.id);
         fbb.addOffset(1, imageBytesOffset);
@@ -638,7 +638,7 @@ obx_int.ModelDefinition getObjectBoxModel() {
           0,
         );
         final imageBytesParam = const fb.ListReader<int>(
-          fb.Int64Reader(),
+          fb.Int8Reader(),
           lazy: false,
         ).vTableGet(buffer, rootOffset, 6, []);
         final createdAtParam = DateTime.fromMillisecondsSinceEpoch(
@@ -851,7 +851,7 @@ class TaskImage_ {
   );
 
   /// See [TaskImage.imageBytes].
-  static final imageBytes = obx.QueryIntegerVectorProperty<TaskImage>(
+  static final imageBytes = obx.QueryByteVectorProperty<TaskImage>(
     _entities[3].properties[1],
   );
 

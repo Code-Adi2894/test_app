@@ -77,6 +77,8 @@ class Task {
 @Sync()
 class TaskImage {
   int id;
+
+  @Property(type: PropertyType.byteVector)
   List<int> imageBytes;
   DateTime createdAt;
   
