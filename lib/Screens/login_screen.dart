@@ -3,7 +3,7 @@ import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
 import '../services/user_service.dart';
-import 'case_list_screen.dart';
+import 'home_screen.dart';
 import 'register_screen.dart';
 
 final userBox = objectbox.store.box<User>();
@@ -43,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null) {
         // Login successful
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const CaseListScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       } else {
         _showErrorDialog('Invalid email or password');

@@ -26,6 +26,7 @@ class Cases {
   DateTime? lastSyncedAt;
   String syncStatus; // 'pending', 'syncing', 'synced', 'failed'
 
+  final site = ToOne<Site>();
   @Backlink()
   final tasks = ToMany<Task>();
 
@@ -83,4 +84,34 @@ class TaskImage {
   final task = ToOne<Task>();
 
   TaskImage({required this.imageBytes});
+}
+
+@Entity()
+@Sync()
+class Site {
+  int id;
+  String name;
+  String? address;
+  String? description;
+  DateTime createdAt;
+  DateTime updatedAt;
+  bool isSynced;
+  DateTime? lastSyncedAt;
+  String syncStatus; // 'pending', 'syncing', 'synced', 'failed'
+
+  @Backlink()
+  final cases = ToMany<Cases>();
+
+  Site({
+    this.id = 0,
+    required this.name,
+    this.address,
+    this.description,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    this.isSynced = false,
+    this.lastSyncedAt,
+    this.syncStatus = 'pending',
+  })  : createdAt = createdAt ?? DateTime.now(),
+        updatedAt = updatedAt ?? DateTime.now();
 }

@@ -4,10 +4,12 @@ import '../entities.dart';
 import '../objectbox.g.dart';
 import '../services/user_service.dart';
 import '../services/sync_service.dart';
+import '../services/site_service.dart';
 import './case_detail_screen.dart';
 import './login_screen.dart';
 import '../widgets/offline_indicator.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import './add_case_dialog.dart';
 
 final caseBox = objectbox.store.box<Cases>();
 final taskBox = objectbox.store.box<Task>();
@@ -103,58 +105,36 @@ class _CaseListScreenState extends State<CaseListScreen> {
   }
 
   void _showAddCaseDialog(BuildContext context) async {
-    final titleController = TextEditingController();
-    final descriptionController = TextEditingController();
-
-    return showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Add New Case'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(
-                  labelText: 'Case Title',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-            ],
+    // Check if there are any sites available
+    final sites = siteService.getAllSites();
+    if (sites.isEmpty) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('No Sites Available'),
+          content: const Text(
+            'You need to create at least one site before adding cases. '
+            'Please go to the Sites tab and create a site first.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                if (titleController.text.isNotEmpty) {
-                  final newCase = Cases(
-                    name: titleController.text,
-                    description: descriptionController.text,
-                    isSynced: false,
-                    syncStatus: 'pending',
-                  );
-                  caseBox.put(newCase);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Add'),
+              child: const Text('OK'),
             ),
           ],
-        );
-      },
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AddCaseDialog(
+        onCaseAdded: (case_) {
+          Navigator.of(context).pop();
+          // The case is already saved in the dialog
+        },
+      ),
     );
   }
 
@@ -730,15 +710,41 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                           ],
                                         ),
                                         const SizedBox(height: 6),
-                                        Text(
-                                          case_.description ?? '',
-                                          style: const TextStyle(
-                                            fontSize: 15,
-                                            color: Color(0xFF6C757D),
-                                          ),
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                        // Site information
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.location_on,
+                                              size: 14,
+                                              color: Colors.grey[600],
+                                            ),
+                                            const SizedBox(width: 4),
+                                            Expanded(
+                                              child: Text(
+                                                case_.site.target?.name ?? 'No Site',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.grey[600],
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
                                         ),
+                                        if (case_.description != null && case_.description!.isNotEmpty) ...[
+                                          const SizedBox(height: 4),
+                                          Text(
+                                            case_.description!,
+                                            style: const TextStyle(
+                                              fontSize: 15,
+                                              color: Color(0xFF6C757D),
+                                            ),
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ],
                                         const SizedBox(height: 8),
                                         // Last synced timestamp
                                         if (case_.isSynced && case_.lastSyncedAt != null)

@@ -49,6 +49,7 @@ Future<void>  main() async{
   await connectivityService.initialize();
 
   var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
+  // var syncServerIp = "127.0.0.1"; for physcial device testing
   SyncClient syncClient = Sync.client(
       objectbox.store,
       'ws://$syncServerIp:9999',
