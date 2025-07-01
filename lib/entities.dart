@@ -57,6 +57,8 @@ class Task {
   String updatedBy;
 
   final cases = ToOne<Cases>();
+  @Backlink()
+  final images = ToMany<TaskImage>();
 
   Task({
     this.id = 0,
@@ -71,7 +73,21 @@ class Task {
   }) : updatedAt = updatedAt ?? DateTime.now();
 }
 
+@Entity()
+@Sync()
+class TaskImage {
+  int id;
+  List<int> imageBytes;
+  DateTime createdAt;
+  
+  final task = ToOne<Task>();
 
+  TaskImage({
+    this.id = 0,
+    required this.imageBytes,
+    DateTime? createdAt,
+  }) : createdAt = createdAt ?? DateTime.now();
+}
 
 @Entity()
 @Sync()
@@ -82,9 +98,6 @@ class Site {
   String? description;
   DateTime createdAt;
   DateTime updatedAt;
-  bool isSynced;
-  DateTime? lastSyncedAt;
-  String syncStatus; // 'pending', 'syncing', 'synced', 'failed'
 
   @Backlink()
   final cases = ToMany<Cases>();
@@ -96,9 +109,6 @@ class Site {
     this.description,
     DateTime? createdAt,
     DateTime? updatedAt,
-    this.isSynced = false,
-    this.lastSyncedAt,
-    this.syncStatus = 'pending',
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 }

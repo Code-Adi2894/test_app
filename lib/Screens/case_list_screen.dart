@@ -256,9 +256,6 @@ class _CaseListScreenState extends State<CaseListScreen> {
         case 'Sync All Data':
           await _syncAllData();
           break;
-        case 'Sync Sites Only':
-          await _syncSitesOnly();
-          break;
         case 'Sync Cases Only':
           await _syncCasesOnly();
           break;
@@ -323,31 +320,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
     );
   }
 
-  Future<void> _syncSitesOnly() async {
-    final pendingSites = syncService.getPendingSites();
-    if (pendingSites.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('No pending sites to sync'),
-          backgroundColor: Color(0xFF6C757D),
-        ),
-      );
-      return;
-    }
 
-    int syncedCount = 0;
-    for (var site in pendingSites) {
-      final success = await syncService.syncSite(site);
-      if (success) syncedCount++;
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$syncedCount sites synchronized successfully!'),
-        backgroundColor: const Color(0xFF28A745),
-      ),
-    );
-  }
 
   Future<void> _syncTasksOnly() async {
     final pendingTasks = syncService.getPendingTasks();
@@ -385,10 +358,6 @@ class _CaseListScreenState extends State<CaseListScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Total Sites: ${stats['totalSites']}'),
-            Text('Synced Sites: ${stats['syncedSites']}'),
-            Text('Pending Sites: ${stats['pendingSites']}'),
-            const SizedBox(height: 16),
             Text('Total Cases: ${stats['totalCases']}'),
             Text('Synced Cases: ${stats['syncedCases']}'),
             Text('Pending Cases: ${stats['pendingCases']}'),

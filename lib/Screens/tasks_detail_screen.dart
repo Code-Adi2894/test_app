@@ -5,8 +5,12 @@ import '../services/user_service.dart';
 import '../widgets/offline_indicator.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/sync_service.dart';
+import 'dart:io';
+import 'dart:typed_data';
+import 'package:image_picker/image_picker.dart';
 
 final taskBox = objectbox.store.box<Task>();
+final taskImageBox = objectbox.store.box<TaskImage>();
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -26,6 +30,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   bool _isOnline = true;
   bool _isSyncing = false;
   late final Connectivity _connectivity;
+  File? imageFile;
 
   @override
   void initState(){
@@ -39,6 +44,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     // Initialize connectivity
     _connectivity = Connectivity();
     _checkConnectivity();
+    print(widget.task.images.length);
   }
 
   Future<void> _checkConnectivity() async {
@@ -63,8 +69,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     widget.task.isCompleted = isCompleted;
     widget.task.priority = priority;
     widget.task.updatedAt = DateTime.now();
-    widget.task.updatedBy = userService.getCurrentUserEmail(); // Use actual user email
-    widget.task.isSynced = false; // Mark as needing sync
+    widget.task.updatedBy = userService.getCurrentUserEmail();
+    widget.task.isSynced = false;
 
     try{
       taskBox.put(widget.task);
@@ -114,8 +120,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     }
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -138,7 +142,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           overflow: TextOverflow.ellipsis,
         ),
         actions: [
-          // Sync button - only show when online
           if (_isOnline)
             IconButton(
               onPressed: _isSyncing ? null : _syncTask,
@@ -164,7 +167,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ),
       body: Column(
         children: [
-          // Offline indicator
           const OfflineIndicator(),
           Expanded(
             child: SingleChildScrollView(
@@ -215,7 +217,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                   ],
                                 ),
                               ),
-                              // Sync status indicator
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
@@ -259,7 +260,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // Task metadata - Updated timestamp
                           Row(
                             children: [
                               Icon(
@@ -277,7 +277,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               ),
                             ],
                           ),
-                          // Updated by information - separate row
                           if (widget.task.updatedBy.isNotEmpty) ...[
                             const SizedBox(height: 4),
                             Row(
@@ -301,20 +300,76 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               ],
                             ),
                           ],
-                          if (widget.task.isSynced)
-                            const SizedBox(height: 8),
-                          if (widget.task.isSynced)
-                            Text(
-                              'Last synced: ${widget.task.updatedAt.toString().substring(0, 19)}',
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Color(0xFF9E9E9E),
-                              ),
-                            ),
                         ],
                       ),
                     ),
                   ),
+                  const SizedBox(height: 24),
+
+                  // Images Section
+                  if(widget.task.images.isNotEmpty)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 5),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.photo_library,
+                                  color: Color(0xFF2196F3),
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                const Text(
+                                  'Task Images',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF495057),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 100,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: widget.task.images.length,
+                                itemBuilder: (context, index){
+                                  final image = widget.task.images[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(8),
+                                      child: Image.memory(
+                                        Uint8List.fromList(image.imageBytes),
+                                        width: 80,
+                                        height: 80,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  );
+                                }
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 24),
 
                   // Review Notes Section
@@ -407,7 +462,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                           const SizedBox(height: 20),
                           
-                          // Title Field
                           Container(
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8F9FA),
@@ -425,7 +479,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Description Field
                           Container(
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8F9FA),
@@ -444,7 +497,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Review Notes Field
                           Container(
                             decoration: BoxDecoration(
                               color: const Color(0xFFF8F9FA),
@@ -465,7 +517,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                           const SizedBox(height: 20),
 
-                          // Completed Checkbox
                           Row(
                             children: [
                               Checkbox(
@@ -488,7 +539,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                           ),
                           const SizedBox(height: 16),
 
-                          // Priority Dropdown
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             decoration: BoxDecoration(
@@ -514,6 +564,57 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
+
+                          // Upload Image Button
+                          ElevatedButton(
+                            onPressed: () async {
+                              final picker = ImagePicker();
+                              final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                              if (pickedFile != null) {
+                                setState(() {
+                                  imageFile = File(pickedFile.path);
+                                });
+                                
+                                // Convert to bytes and save to database
+                                final bytes = await imageFile!.readAsBytes();
+                                final taskImage = TaskImage(imageBytes: bytes);
+                                taskImage.task.target = widget.task;
+                                
+                                final imageId = taskImageBox.put(taskImage);
+                                taskImage.id = imageId;
+                                
+                                // Update task
+                                widget.task.isSynced = false;
+                                widget.task.updatedAt = DateTime.now();
+                                taskBox.put(widget.task);
+                                
+                                setState(() {
+                                  // Refresh the task to show new images
+                                  final updatedTask = taskBox.get(widget.task.id);
+                                  if (updatedTask != null) {
+                                    widget.task.images.clear();
+                                    widget.task.images.addAll(updatedTask.images);
+                                  }
+                                });
+                                
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Image uploaded successfully!'),
+                                    backgroundColor: Color(0xFF28A745),
+                                  ),
+                                );
+                              }
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF2196F3),
+                              foregroundColor: Colors.white,
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text("Upload Image"),
+                          ),
                         ],
                       ),
                     ),
@@ -526,18 +627,5 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ],
       ),
     );
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority.toUpperCase()) {
-      case 'HIGH':
-        return const Color(0xFFDC3545);
-      case 'MEDIUM':
-        return const Color(0xFFFFC107);
-      case 'LOW':
-        return const Color(0xFF28A745);
-      default:
-        return const Color(0xFF6C757D);
-    }
   }
 }

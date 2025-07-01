@@ -35,8 +35,6 @@ class SiteService {
       name: name,
       address: address,
       description: description,
-      isSynced: false, // Mark as not synced so it can be synced
-      syncStatus: 'pending',
     );
 
     // Store the site and get the ID
