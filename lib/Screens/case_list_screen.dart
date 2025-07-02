@@ -165,6 +165,11 @@ class _CaseListScreenState extends State<CaseListScreen> {
         onCaseAdded: (case_) {
           Navigator.of(context).pop();
           // The case is already saved in the dialog
+          
+          // Auto-sync the newly created case if online
+          if (_isOnline) {
+            _autoSyncSingleCase(case_);
+          }
         },
       ),
     );
