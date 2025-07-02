@@ -57,14 +57,16 @@ class _AddCaseDialogState extends State<AddCaseDialog> {
         throw Exception('Selected site not found');
       }
 
-      // Create new case
+      // Create new case with proper offline-first sync status
       final newCase = Cases(
         name: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty 
             ? null 
             : _descriptionController.text.trim(),
-        isSynced: true, // Since it's saved to local database immediately
-        syncStatus: 'synced', // Local database is synced
+        isSynced: false, // Mark as needing sync for offline-first
+        syncStatus: 'pending', // Mark as pending sync
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
       );
 
       // Set the site relationship

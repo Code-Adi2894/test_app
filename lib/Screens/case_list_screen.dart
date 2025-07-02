@@ -57,18 +57,29 @@ class _CaseListScreenState extends State<CaseListScreen> {
       _isOnline = result != ConnectivityResult.none;
     });
     
+    print('Initial connectivity check: ${_isOnline ? 'Online' : 'Offline'}');
+    
     // Auto-sync if we're online initially and have pending cases
     if (_isOnline && !wasOffline) {
+      print('Device is online, checking for pending cases...');
       _autoSyncPendingCases();
     }
   }
 
   void _autoSyncPendingCases() async {
+    if (!_isOnline) {
+      print('Auto-sync skipped: Device is offline');
+      return;
+    }
+
     if (!await syncService.isOnline()) {
-      return; // Don't auto-sync if offline
+      print('Auto-sync skipped: Sync service reports offline');
+      return;
     }
 
     final pendingCases = caseBox.query(Cases_.isSynced.equals(false)).build().find();
+    print('Found ${pendingCases.length} pending cases for auto-sync');
+    
     if (pendingCases.isNotEmpty) {
       setState(() {
         _isSyncing = true;
@@ -76,18 +87,37 @@ class _CaseListScreenState extends State<CaseListScreen> {
       });
 
       try {
+        int syncedCount = 0;
         for (var case_ in pendingCases) {
-          await syncService.syncCase(case_);
+          print('Auto-syncing case: ${case_.name} (ID: ${case_.id})');
+          final success = await syncService.syncCase(case_);
+          if (success) {
+            syncedCount++;
+            print('Successfully synced case: ${case_.name}');
+          } else {
+            print('Failed to sync case: ${case_.name}');
+          }
         }
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${pendingCases.length} cases auto-synced successfully!'),
-            backgroundColor: const Color(0xFF28A745),
-            duration: const Duration(seconds: 3),
-          ),
-        );
+        if (syncedCount > 0) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('$syncedCount cases auto-synced successfully!'),
+              backgroundColor: const Color(0xFF28A745),
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No cases were synced. Please try manual sync.'),
+              backgroundColor: Color(0xFFFF9800),
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       } catch (e) {
+        print('Auto-sync error: $e');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Auto-sync failed: $e'),
@@ -101,6 +131,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
           _isAutoSyncing = false;
         });
       }
+    } else {
+      print('No pending cases found for auto-sync');
     }
   }
 
@@ -386,6 +418,21 @@ class _CaseListScreenState extends State<CaseListScreen> {
   }
 
   void _syncSingleCase(Cases case_) async {
+    if (!_isOnline) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Cannot sync while offline. Data is protected locally.'),
+          backgroundColor: Color(0xFFFF9800),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSyncing = true;
+    });
+
     try {
       final success = await syncService.syncCase(case_);
       if (success) {
@@ -393,6 +440,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
           SnackBar(
             content: Text('Case "${case_.name}" synchronized successfully!'),
             backgroundColor: const Color(0xFF28A745),
+            duration: const Duration(seconds: 2),
           ),
         );
       } else {
@@ -403,8 +451,13 @@ class _CaseListScreenState extends State<CaseListScreen> {
         SnackBar(
           content: Text('Sync failed: $e'),
           backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 3),
         ),
       );
+    } finally {
+      setState(() {
+        _isSyncing = false;
+      });
     }
   }
 
@@ -444,6 +497,101 @@ class _CaseListScreenState extends State<CaseListScreen> {
       setState(() {
         _isAutoSyncing = false;
       });
+    }
+  }
+
+  // Helper method to get sync status for a case
+  Widget _buildSyncStatusIndicator(Cases case_) {
+    if (!_isOnline) {
+      // Offline: Show offline status with data protection
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: const Color(0xFFFFF3E0), // Orange background for offline
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.cloud_off,
+              size: 14,
+              color: Color(0xFFFF9800), // Orange icon
+            ),
+            const SizedBox(width: 4),
+            const Text(
+              'Offline',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFFF9800), // Orange text
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // Online: Show actual sync status
+      final isSynced = case_.isSynced;
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isSynced 
+            ? const Color(0xFFE8F5E8)  // Green for synced
+            : const Color(0xFFFFEBEE), // Red for pending
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSynced ? Icons.check_circle : Icons.sync,
+              size: 14,
+              color: isSynced 
+                ? const Color(0xFF28A745) 
+                : const Color(0xFFDC3545),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              isSynced ? 'Synced' : 'Pending',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isSynced 
+                  ? const Color(0xFF28A745) 
+                  : const Color(0xFFDC3545),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // Helper method to get sync button for a case
+  Widget? _buildSyncButton(Cases case_) {
+    if (!_isOnline) {
+      // Offline: No sync button (data protection)
+      return null;
+    } else if (case_.isSynced) {
+      // Online + Synced: No sync button needed
+      return null;
+    } else {
+      // Online + Not Synced: Show sync button
+      return IconButton(
+        onPressed: _isSyncing ? null : () => _syncSingleCase(case_),
+        icon: _isSyncing
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                ),
+              )
+            : const Icon(Icons.sync, color: Color(0xFF2196F3)),
+        tooltip: 'Sync Case',
+      );
     }
   }
 
@@ -670,33 +818,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                               ),
                                             ),
                                             const SizedBox(width: 8),
-                                            // Sync status indicator
-                                            Container(
-                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                              decoration: BoxDecoration(
-                                                color: const Color(0xFFE8F5E8),
-                                                borderRadius: BorderRadius.circular(12),
-                                              ),
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  const Icon(
-                                                    Icons.check_circle,
-                                                    size: 14,
-                                                    color: Color(0xFF28A745),
-                                                  ),
-                                                  const SizedBox(width: 4),
-                                                  const Text(
-                                                    'Synced',
-                                                    style: TextStyle(
-                                                      fontSize: 12,
-                                                      fontWeight: FontWeight.w600,
-                                                      color: Color(0xFF28A745),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
+                                            // Enhanced sync status indicator
+                                            _buildSyncStatusIndicator(case_),
                                           ],
                                         ),
                                         const SizedBox(height: 6),
@@ -750,6 +873,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                   const SizedBox(width: 16),
                                   Column(
                                     children: [
+                                      // Enhanced sync button
+                                      if (_buildSyncButton(case_) != null) _buildSyncButton(case_)!,
                                       // View case button
                                       IconButton(
                                         icon: const Icon(Icons.arrow_forward_ios_rounded, color: Color(0xFF2196F3)),

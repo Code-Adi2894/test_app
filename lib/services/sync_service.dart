@@ -192,24 +192,24 @@ class SyncService {
     final pendingSites = stats['pendingSites'] ?? 0;
 
     return [
-      {
-        'title': 'Sync All Data',
-        'subtitle': 'Sync all pending cases and tasks',
-        'icon': Icons.sync,
-        'enabled': pendingTasks > 0 || pendingCases > 0,
-      },
-      {
-        'title': 'Sync Cases Only',
-        'subtitle': 'Sync only pending cases',
-        'icon': Icons.folder_open,
-        'enabled': pendingCases > 0,
-      },
-      {
-        'title': 'Sync Tasks Only',
-        'subtitle': 'Sync only pending tasks',
-        'icon': Icons.task_alt,
-        'enabled': pendingTasks > 0,
-      },
+      // {
+      //   'title': 'Sync All Data',
+      //   'subtitle': 'Sync all pending cases and tasks',
+      //   'icon': Icons.sync,
+      //   'enabled': pendingTasks > 0 || pendingCases > 0,
+      // },
+      // {
+      //   'title': 'Sync Cases Only',
+      //   'subtitle': 'Sync only pending cases',
+      //   'icon': Icons.folder_open,
+      //   'enabled': pendingCases > 0,
+      // },
+      // {
+      //   'title': 'Sync Tasks Only',
+      //   'subtitle': 'Sync only pending tasks',
+      //   'icon': Icons.task_alt,
+      //   'enabled': pendingTasks > 0,
+      // },
       {
         'title': 'View Sync Status',
         'subtitle': 'Check current sync statistics',
