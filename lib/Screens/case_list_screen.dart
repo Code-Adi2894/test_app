@@ -320,8 +320,6 @@ class _CaseListScreenState extends State<CaseListScreen> {
     );
   }
 
-
-
   Future<void> _syncTasksOnly() async {
     final pendingTasks = syncService.getPendingTasks();
     if (pendingTasks.isEmpty) {
@@ -546,8 +544,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Color(0xFFB3E5FC),
-                    Color(0xFF81D4FA),
+                    Color(0xFFF8F9FF),  // Very light purple-blue
+                    Color(0xFFE8F4FD),  // Light blue
                   ],
                 ),
               ),
@@ -689,7 +687,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                                   ),
                                                   const SizedBox(width: 4),
                                                   const Text(
-                                                    'Saved',
+                                                    'Synced',
                                                     style: TextStyle(
                                                       fontSize: 12,
                                                       fontWeight: FontWeight.w600,
