@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../objectbox.g.dart';
 import '../entities.dart';
 import '../main.dart';
 import '../services/user_service.dart';
@@ -11,6 +12,14 @@ import 'package:image_picker/image_picker.dart';
 
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();
+
+// Stream to watch for changes to a specific task
+Stream<Task?> getTaskStream(int taskId) {
+  return taskBox.query(Task_.id.equals(taskId)).watch(triggerImmediately: true).map((query) {
+    final tasks = query.find();
+    return tasks.isNotEmpty ? tasks.first : null;
+  });
+}
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
@@ -44,7 +53,6 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     // Initialize connectivity
     _connectivity = Connectivity();
     _checkConnectivity();
-    print(widget.task.images.length);
   }
 
   Future<void> _checkConnectivity() async {
@@ -131,15 +139,21 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text(
-          widget.task.title,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
+        title: StreamBuilder<Task?>(
+          stream: getTaskStream(widget.task.id),
+          builder: (context, snapshot) {
+            final task = snapshot.data ?? widget.task;
+            return Text(
+              task.title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            );
+          },
         ),
         actions: [
           if (_isOnline)
@@ -169,458 +183,456 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         children: [
           const OfflineIndicator(),
           Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Task Details Card
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
+            child: StreamBuilder<Task?>(
+              stream: getTaskStream(widget.task.id),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF2196F3)),
+                    ),
+                  );
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Color(0xFF6C757D),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Error: ${snapshot.error}',
+                          style: const TextStyle(color: Color(0xFF6C757D)),
+                          textAlign: TextAlign.center,
                         ),
                       ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      widget.task.title,
-                                      style: const TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Color(0xFF495057),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(
-                                      'Task Details',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color: Color(0xFF6C757D),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: widget.task.isSynced 
-                                    ? const Color(0xFFE8F5E8) 
-                                    : const Color(0xFFFFEBEE),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      widget.task.isSynced ? Icons.check_circle : Icons.sync,
-                                      size: 14,
-                                      color: widget.task.isSynced 
-                                        ? const Color(0xFF28A745) 
-                                        : const Color(0xFFDC3545),
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      widget.task.isSynced ? 'Synced' : 'Pending',
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w600,
-                                        color: widget.task.isSynced 
-                                          ? const Color(0xFF28A745) 
-                                          : const Color(0xFFDC3545),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            widget.task.description,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF6C757D),
+                  );
+                }
+
+                final task = snapshot.data ?? widget.task;
+                
+                // Update controllers with latest data
+                if (task.title != titleController.text) {
+                  titleController.text = task.title;
+                }
+                if (task.description != descriptionController.text) {
+                  descriptionController.text = task.description;
+                }
+                if (task.reviewNotes != reviewNotesController.text) {
+                  reviewNotesController.text = task.reviewNotes;
+                }
+                if (task.isCompleted != isCompleted) {
+                  isCompleted = task.isCompleted;
+                }
+                if (task.priority != priority) {
+                  priority = task.priority;
+                }
+
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Task Details Card
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(
-                                Icons.access_time,
-                                size: 12,
-                                color: const Color(0xFF9E9E9E),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          task.title,
+                                          style: const TextStyle(
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            color: Color(0xFF495057),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          'Task Details',
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Color(0xFF6C757D),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    decoration: BoxDecoration(
+                                      color: task.isSynced 
+                                        ? const Color(0xFFE8F5E8) 
+                                        : const Color(0xFFFFEBEE),
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          task.isSynced ? Icons.check_circle : Icons.sync,
+                                          size: 14,
+                                          color: task.isSynced 
+                                            ? const Color(0xFF28A745) 
+                                            : const Color(0xFFDC3545),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          task.isSynced ? 'Synced' : 'Pending',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            color: task.isSynced 
+                                              ? const Color(0xFF28A745) 
+                                              : const Color(0xFFDC3545),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 4),
+                              const SizedBox(height: 12),
                               Text(
-                                'Updated: ${widget.task.updatedAt.toString().substring(0, 19)}',
+                                task.description,
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Color(0xFF9E9E9E),
+                                  fontSize: 14,
+                                  color: Color(0xFF6C757D),
                                 ),
                               ),
-                            ],
-                          ),
-                          if (widget.task.updatedBy.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.person,
-                                  size: 12,
-                                  color: const Color(0xFF9E9E9E),
-                                ),
-                                const SizedBox(width: 4),
-                                Expanded(
-                                  child: Text(
-                                    'By: ${widget.task.updatedBy}',
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Icon(
+                                    Icons.access_time,
+                                    size: 12,
+                                    color: const Color(0xFF9E9E9E),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Updated: ${task.updatedAt.toString().substring(0, 19)}',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: Color(0xFF9E9E9E),
                                     ),
-                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Images Section
-                  if(widget.task.images.isNotEmpty)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.photo_library,
-                                  color: Color(0xFF2196F3),
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Task Images',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF495057),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            SizedBox(
-                              height: 100,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: widget.task.images.length,
-                                itemBuilder: (context, index){
-                                  final image = widget.task.images[index];
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(8),
-                                      child: Image.memory(
-                                        Uint8List.fromList(image.imageBytes),
-                                        width: 80,
-                                        height: 80,
-                                        fit: BoxFit.cover,
+                                ],
+                              ),
+                              if (task.updatedBy.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.person,
+                                      size: 12,
+                                      color: const Color(0xFF9E9E9E),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        'By: ${task.updatedBy}',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF9E9E9E),
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
-                                  );
-                                }
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  const SizedBox(height: 24),
-
-                  // Review Notes Section
-                  if (widget.task.reviewNotes.isNotEmpty) ...[
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(
-                                  Icons.rate_review,
-                                  color: Color(0xFF2196F3),
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 8),
-                                const Text(
-                                  'Review Notes',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF495057),
-                                  ),
+                                  ],
                                 ),
                               ],
-                            ),
-                            const SizedBox(height: 12),
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF8F9FA),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: const Color(0xFFE0E0E0)),
-                              ),
-                              child: Text(
-                                widget.task.reviewNotes,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Color(0xFF495057),
-                                  height: 1.5,
-                                ),
-                              ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                      const SizedBox(height: 24),
 
-                  // Edit Section
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
-                          blurRadius: 10,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Edit Task',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF495057),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextField(
-                              controller: titleController,
-                              decoration: const InputDecoration(
-                                labelText: 'Title',
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                labelStyle: TextStyle(color: Color(0xFF6C757D)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextField(
-                              controller: descriptionController,
-                              maxLines: 3,
-                              decoration: const InputDecoration(
-                                labelText: 'Description',
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                labelStyle: TextStyle(color: Color(0xFF6C757D)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-
-                          Container(
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: TextField(
-                              controller: reviewNotesController,
-                              maxLines: 4,
-                              decoration: const InputDecoration(
-                                labelText: 'Review Notes',
-                                border: InputBorder.none,
-                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                labelStyle: TextStyle(color: Color(0xFF6C757D)),
-                                hintText: 'Add review notes, comments, or observations...',
-                                hintStyle: TextStyle(color: Color(0xFFADB5BD)),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: isCompleted,
-                                onChanged: (bool? value){
-                                  setState((){
-                                    isCompleted = value ?? false;
-                                  });
-                                },
-                                activeColor: const Color(0xFF28A745),
-                              ),
-                              const Text(
-                                "Mark as completed",
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  color: Color(0xFF495057),
-                                ),
+                      // Images Section
+                      if(task.images.isNotEmpty)
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 16),
-
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFF8F9FA),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: DropdownButton<String>(
-                              value: priority,
-                              isExpanded: true,
-                              underline: Container(),
-                              icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6C757D)),
-                              items: levels.map((String level){
-                                return DropdownMenuItem<String>(
-                                  value: level,
-                                  child: Text(level),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue){
-                                setState((){
-                                  priority = newValue!;
-                                });
-                              },
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-
-                          // Upload Image Button
-                          ElevatedButton(
-                            onPressed: () async {
-                              final picker = ImagePicker();
-                              final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-                              if (pickedFile != null) {
-                                final bytes = await pickedFile.readAsBytes();
-                                final taskImage = TaskImage(imageBytes: bytes);
-                                taskImage.task.target = widget.task;
-
-                                final imageId = taskImageBox.put(taskImage);
-                                taskImage.id = imageId;
-                                setState(() {
-                                  imageFile = File(pickedFile.path);
-                                });
-                                
-
-                                // Update task
-                                widget.task.isSynced = false;
-                                widget.task.updatedAt = DateTime.now();
-                                taskBox.put(widget.task);
-                                
-                                setState(() {
-                                  // Refresh the task to show new images
-                                  final updatedTask = taskBox.get(widget.task.id);
-                                  if (updatedTask != null) {
-                                    widget.task.images.clear();
-                                    widget.task.images.addAll(updatedTask.images);
-                                  }
-                                });
-                                
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Image uploaded successfully!'),
-                                    backgroundColor: Color(0xFF28A745),
+                          child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Icon(
+                                      Icons.photo_library,
+                                      color: Color(0xFF2196F3),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    const Text(
+                                      'Task Images',
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        color: Color(0xFF495057),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 100,
+                                  child: ListView.builder(
+                                    scrollDirection: Axis.horizontal,
+                                    itemCount: task.images.length,
+                                    itemBuilder: (context, index){
+                                      final image = task.images[index];
+                                      return Padding(
+                                        padding: const EdgeInsets.symmetric(horizontal: 4),
+                                        child: ClipRRect(
+                                          borderRadius: BorderRadius.circular(8),
+                                          child: Image.memory(
+                                            Uint8List.fromList(image.imageBytes),
+                                            width: 80,
+                                            height: 80,
+                                            fit: BoxFit.cover,
+                                          ),
+                                        ),
+                                      );
+                                    }
                                   ),
-                                );
-                              }
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF2196F3),
-                              foregroundColor: Colors.white,
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+                                ),
+                              ],
                             ),
-                            child: const Text("Upload Image"),
                           ),
-                        ],
+                        ),
+                      const SizedBox(height: 24),
+
+                      // Review Notes Section
+                      if (task.reviewNotes.isNotEmpty) ...[
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.1),
+                                blurRadius: 10,
+                                offset: const Offset(0, 5),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+
+                      // Edit Section
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Edit Task',
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF495057),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+                              
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: TextField(
+                                  controller: titleController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Title',
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: TextField(
+                                  controller: descriptionController,
+                                  maxLines: 3,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Description',
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: TextField(
+                                  controller: reviewNotesController,
+                                  maxLines: 4,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Review Notes',
+                                    border: InputBorder.none,
+                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                    hintText: 'Add review notes, comments, or observations...',
+                                    hintStyle: TextStyle(color: Color(0xFFADB5BD)),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              Row(
+                                children: [
+                                  Checkbox(
+                                    value: isCompleted,
+                                    onChanged: (bool? value){
+                                      setState((){
+                                        isCompleted = value ?? false;
+                                      });
+                                    },
+                                    activeColor: const Color(0xFF28A745),
+                                  ),
+                                  const Text(
+                                    "Mark as completed",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Color(0xFF495057),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFF8F9FA),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: DropdownButton<String>(
+                                  value: priority,
+                                  isExpanded: true,
+                                  underline: Container(),
+                                  icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6C757D)),
+                                  items: levels.map((String level){
+                                    return DropdownMenuItem<String>(
+                                      value: level,
+                                      child: Text(level),
+                                    );
+                                  }).toList(),
+                                  onChanged: (String? newValue){
+                                    setState((){
+                                      priority = newValue!;
+                                    });
+                                  },
+                                ),
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Upload Image Button
+                              ElevatedButton(
+                                onPressed: () async {
+                                  final picker = ImagePicker();
+                                  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+                                  if (pickedFile != null) {
+                                    final bytes = await pickedFile.readAsBytes();
+                                    final taskImage = TaskImage(imageBytes: bytes);
+                                    taskImage.task.target = task;
+
+                                    final imageId = taskImageBox.put(taskImage);
+                                    taskImage.id = imageId;
+                                    setState(() {
+                                      imageFile = File(pickedFile.path);
+                                    });
+                                    
+
+                                    // Update task
+                                    task.isSynced = false;
+                                    task.updatedAt = DateTime.now();
+                                    taskBox.put(task);
+                                    
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Image uploaded successfully!'),
+                                        backgroundColor: Color(0xFF28A745),
+                                      ),
+                                    );
+                                  }
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2196F3),
+                                  foregroundColor: Colors.white,
+                                  minimumSize: const Size(double.infinity, 50),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                child: const Text("Upload Image"),
+                              ),
+                            ],
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 24),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],
