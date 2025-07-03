@@ -18,9 +18,12 @@ class _OfflineIndicatorState extends State<OfflineIndicator> {
     _connectivity = Connectivity();
     _checkConnectivity();
     _connectivity.onConnectivityChanged.listen((results) {
-      setState(() {
-        _isOnline = results.isNotEmpty && results.first != ConnectivityResult.none;
-      });
+      if (mounted){
+        setState(() {
+          _isOnline =
+              results.isNotEmpty && results.first != ConnectivityResult.none;
+        });
+    }
     });
   }
 

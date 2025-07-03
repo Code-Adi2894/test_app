@@ -477,7 +477,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
               selectedSite: _selectedSite,
               onSiteChanged: (v) => setState(() => _selectedSite = v),
             ),
-            const OfflineIndicator(),
+            // const OfflineIndicator(),
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(

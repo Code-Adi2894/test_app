@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_app/widgets/offline_indicator.dart';
 import 'case_list_tab.dart';
 import 'sites_list_screen.dart';
 import '../services/user_service.dart';
@@ -36,32 +37,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   @override
   Widget build(BuildContext context) {
     final currentUser = userService.currentUser;
-    
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Case Tracker',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-              ),
-            ),
-            if (currentUser != null)
-              Text(
-                currentUser.email,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                  fontWeight: FontWeight.normal,
-                ),
-              ),
-          ],
-        ),
+        title: const Text('Case Tracker'),
         backgroundColor: const Color(0xFF2196F3),
         foregroundColor: Colors.white,
         elevation: 0,
@@ -93,22 +73,34 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
           labelColor: Colors.white,
           unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(
-              icon: Icon(Icons.folder_open),
-              text: 'Cases',
-            ),
-            Tab(
-              icon: Icon(Icons.location_on),
-              text: 'Sites',
-            ),
+            Tab(icon: Icon(Icons.folder_open), text: 'Cases'),
+            Tab(icon: Icon(Icons.location_on), text: 'Sites'),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: const [
-          CaseListTab(),
-          SitesListScreen(),
+      body: Column(
+        children: [
+          const OfflineIndicator(),
+          if (currentUser != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  currentUser.email,
+                  style: const TextStyle(color: Colors.black54, fontSize: 12),
+                ),
+              ),
+            ),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: const [
+                CaseListTab(),
+                SitesListScreen(),
+              ],
+            ),
+          ),
         ],
       ),
     );
