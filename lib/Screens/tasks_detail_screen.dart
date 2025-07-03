@@ -9,6 +9,7 @@ import '../services/sync_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
+import '../services/conflict_resolution_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();
@@ -71,6 +72,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _saveChanges() {
+    // Log the task before saving
+    print('\n💾 SAVE OPERATION STARTED');
+    _logTaskProperties('TASK BEFORE SAVE', widget.task);
+    
     widget.task.title = titleController.text;
     widget.task.description = descriptionController.text;
     widget.task.reviewNotes = reviewNotesController.text;
@@ -82,6 +87,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     try{
       taskBox.put(widget.task);
+      
+      // Log the task after saving
+      print('\n✅ SAVE OPERATION COMPLETED');
+      _logTaskProperties('TASK AFTER SAVE', widget.task);
       
       // Auto-sync if online
       if (_isOnline) {
@@ -101,6 +110,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     });
 
     try {
+      // Log the task before syncing
+      print('\n🔄 SYNC OPERATION STARTED');
+      _logTaskProperties('TASK TO SYNC', widget.task);
+      
       final success = await syncService.syncTask(widget.task);
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -126,6 +139,76 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         _isSyncing = false;
       });
     }
+  }
+  // Helper method to get current task from database
+  Task getCurrentTask() {
+    final query = taskBox.query(Task_.id.equals(widget.task.id)).build();
+    final tasks = query.find();
+    query.close();
+    return tasks.isNotEmpty ? tasks.first : widget.task;
+  }
+
+  // Helper method to check for conflicts
+  bool _hasConflicts(Task local, Task remote) {
+    // Implementation of _hasConflicts method
+    return false; // Placeholder return, actual implementation needed
+  }
+
+  // Helper method to log task properties
+  void _logTaskProperties(String taskName, Task task) {
+    print('=== $taskName Task Properties ===');
+    print('ID: ${task.id}');
+    print('Title: "${task.title}"');
+    print('Description: "${task.description}"');
+    print('Is Completed: ${task.isCompleted}');
+    print('Is Synced: ${task.isSynced}');
+    print('Priority: "${task.priority}"');
+    print('Review Notes: "${task.reviewNotes}"');
+    print('Updated At: ${task.updatedAt}');
+    print('Updated By: "${task.updatedBy}"');
+    print('Cases ID: ${task.cases.target?.id ?? "null"}');
+    print('Images Count: ${task.images.length}');
+    print('================================');
+  }
+
+  // Helper method to compare and log two tasks
+  void _logTaskComparison(Task localTask, Task remoteTask) {
+    print('\n🔍 TASK COMPARISON LOG 🔍');
+    print('=' * 50);
+    
+    _logTaskProperties('LOCAL', localTask);
+    print('');
+    _logTaskProperties('REMOTE', remoteTask);
+    print('');
+    
+    // Log differences
+    print('📊 DIFFERENCES:');
+    if (localTask.title != remoteTask.title) {
+      print('❌ Title: Local="${localTask.title}" vs Remote="${remoteTask.title}"');
+    }
+    if (localTask.description != remoteTask.description) {
+      print('❌ Description: Local="${localTask.description}" vs Remote="${remoteTask.description}"');
+    }
+    if (localTask.isCompleted != remoteTask.isCompleted) {
+      print('❌ Completed: Local=${localTask.isCompleted} vs Remote=${remoteTask.isCompleted}');
+    }
+    if (localTask.priority != remoteTask.priority) {
+      print('❌ Priority: Local="${localTask.priority}" vs Remote="${remoteTask.priority}"');
+    }
+    if (localTask.reviewNotes != remoteTask.reviewNotes) {
+      print('❌ Review Notes: Local="${localTask.reviewNotes}" vs Remote="${remoteTask.reviewNotes}"');
+    }
+    if (localTask.isSynced != remoteTask.isSynced) {
+      print('❌ Synced: Local=${localTask.isSynced} vs Remote=${remoteTask.isSynced}');
+    }
+    if (localTask.updatedAt != remoteTask.updatedAt) {
+      print('❌ Updated At: Local=${localTask.updatedAt} vs Remote=${remoteTask.updatedAt}');
+    }
+    if (localTask.updatedBy != remoteTask.updatedBy) {
+      print('❌ Updated By: Local="${localTask.updatedBy}" vs Remote="${remoteTask.updatedBy}"');
+    }
+    
+    print('=' * 50);
   }
 
   @override
@@ -214,6 +297,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 }
 
                 final task = snapshot.data ?? widget.task;
+                
+                // Log local and remote tasks for debugging
+                _logTaskProperties('LOCAL (widget.task)', widget.task);
+                _logTaskProperties('REMOTE (from stream)', task);
                 
                 // Update controllers with latest data
                 if (task.title != titleController.text) {
