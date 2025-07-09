@@ -4,6 +4,9 @@ import '../main.dart';
 import '../objectbox.g.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import '../services/conflict_detection_service.dart';
+import 'conflict_resolution_service.dart';
+import 'user_service.dart';
 
 class SyncService {
   static final SyncService _instance = SyncService._internal();
@@ -170,6 +173,15 @@ class SyncService {
     }
 
     try {
+      // Check if there are any other pending changes for this task
+      final pendingTasks = taskBox.query(Task_.id.equals(task.id)).build().find();
+      
+      // If there are multiple versions of this task, don't sync automatically
+      if (pendingTasks.length > 1) {
+        print('Multiple versions of task ${task.id} found - skipping automatic sync');
+        return false; // Don't sync, let user resolve conflicts manually
+      }
+
       await Future.delayed(const Duration(milliseconds: 500));
       final syncTime = DateTime.now();
       task.isSynced = true;

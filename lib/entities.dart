@@ -55,6 +55,18 @@ class Task {
   String reviewNotes;
   DateTime updatedAt;
   String updatedBy;
+  
+  // Field-level change tracking for conflict resolution
+  DateTime? titleLastModified;
+  DateTime? descriptionLastModified;
+  DateTime? isCompletedLastModified;
+  DateTime? priorityLastModified;
+  DateTime? reviewNotesLastModified;
+  String? titleModifiedBy;
+  String? descriptionModifiedBy;
+  String? isCompletedModifiedBy;
+  String? priorityModifiedBy;
+  String? reviewNotesModifiedBy;
 
   final cases = ToOne<Cases>();
   @Backlink()
@@ -70,6 +82,16 @@ class Task {
     this.reviewNotes = '',
     DateTime? updatedAt,
     this.updatedBy = '',
+    this.titleLastModified,
+    this.descriptionLastModified,
+    this.isCompletedLastModified,
+    this.priorityLastModified,
+    this.reviewNotesLastModified,
+    this.titleModifiedBy,
+    this.descriptionModifiedBy,
+    this.isCompletedModifiedBy,
+    this.priorityModifiedBy,
+    this.reviewNotesModifiedBy,
   }) : updatedAt = updatedAt ?? DateTime.now();
 }
 

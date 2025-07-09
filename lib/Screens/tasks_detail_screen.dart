@@ -10,6 +10,8 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 import '../services/conflict_resolution_service.dart';
+import 'conflict_resolution_screen.dart';
+import '../services/conflict_detection_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();
@@ -41,6 +43,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   bool _isSyncing = false;
   late final Connectivity _connectivity;
   File? imageFile;
+  bool _hasCheckedConflicts = false;
 
   @override
   void initState(){
@@ -54,6 +57,93 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     // Initialize connectivity
     _connectivity = Connectivity();
     _checkConnectivity();
+    
+    // Check for conflicts when screen opens
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkForConflicts();
+    });
+  }
+
+  /// Check for conflicts when the task detail screen is opened
+  Future<void> _checkForConflictsOnOpen() async {
+    if (_hasCheckedConflicts) return;
+    _hasCheckedConflicts = true;
+
+    // Only check if we're online
+    if (!_isOnline) return;
+
+    try {
+      // Check if this task has conflicts
+      final conflictData = await conflictDetectionService.detectConflictsForTask(widget.task);
+      
+      if (conflictData != null && conflictData.conflictingFields.isNotEmpty) {
+        // Show conflict resolution screen
+        final resolvedTask = await Navigator.of(context).push<Task>(
+          MaterialPageRoute(
+            builder: (context) => ConflictResolutionScreen(
+              localTask: widget.task,
+              remoteTask: conflictData.remoteTask,
+            ),
+          ),
+        );
+        
+        if (resolvedTask != null) {
+          // Update the widget task with resolved task
+          _updateTaskWithResolvedData(resolvedTask);
+          
+          // Remove from pending conflicts
+          conflictDetectionService.removeResolvedConflict(widget.task);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Task conflicts resolved successfully!'),
+              backgroundColor: Color(0xFF28A745),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Error checking for conflicts: $e');
+    }
+  }
+
+  /// Update task with resolved data
+  void _updateTaskWithResolvedData(Task resolvedTask) {
+    // Update the widget task with resolved task
+    widget.task.title = resolvedTask.title;
+    widget.task.description = resolvedTask.description;
+    widget.task.isCompleted = resolvedTask.isCompleted;
+    widget.task.priority = resolvedTask.priority;
+    widget.task.reviewNotes = resolvedTask.reviewNotes;
+    widget.task.updatedAt = resolvedTask.updatedAt;
+    widget.task.updatedBy = resolvedTask.updatedBy;
+    widget.task.isSynced = resolvedTask.isSynced;
+    
+    // Update field-level tracking
+    widget.task.titleLastModified = resolvedTask.titleLastModified;
+    widget.task.titleModifiedBy = resolvedTask.titleModifiedBy;
+    widget.task.descriptionLastModified = resolvedTask.descriptionLastModified;
+    widget.task.descriptionModifiedBy = resolvedTask.descriptionModifiedBy;
+    widget.task.isCompletedLastModified = resolvedTask.isCompletedLastModified;
+    widget.task.isCompletedModifiedBy = resolvedTask.isCompletedModifiedBy;
+    widget.task.priorityLastModified = resolvedTask.priorityLastModified;
+    widget.task.priorityModifiedBy = resolvedTask.priorityModifiedBy;
+    widget.task.reviewNotesLastModified = resolvedTask.reviewNotesLastModified;
+    widget.task.reviewNotesModifiedBy = resolvedTask.reviewNotesModifiedBy;
+    
+    // Update controllers
+    titleController.text = widget.task.title;
+    descriptionController.text = widget.task.description;
+    reviewNotesController.text = widget.task.reviewNotes;
+    isCompleted = widget.task.isCompleted;
+    priority = widget.task.priority;
+    
+    // Save the resolved task
+    taskBox.put(widget.task);
+    
+    // Trigger UI update
+    setState(() {});
   }
 
   Future<void> _checkConnectivity() async {
@@ -76,14 +166,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     print('\n💾 SAVE OPERATION STARTED');
     _logTaskProperties('TASK BEFORE SAVE', widget.task);
     
-    widget.task.title = titleController.text;
-    widget.task.description = descriptionController.text;
-    widget.task.reviewNotes = reviewNotesController.text;
-    widget.task.isCompleted = isCompleted;
-    widget.task.priority = priority;
-    widget.task.updatedAt = DateTime.now();
-    widget.task.updatedBy = userService.getCurrentUserEmail();
-    widget.task.isSynced = false;
+    // Update field-level tracking for each changed field
+    if (widget.task.title != titleController.text) {
+      conflictResolutionService.updateFieldTracking(widget.task, 'title', titleController.text);
+    }
+    if (widget.task.description != descriptionController.text) {
+      conflictResolutionService.updateFieldTracking(widget.task, 'description', descriptionController.text);
+    }
+    if (widget.task.isCompleted != isCompleted) {
+      conflictResolutionService.updateFieldTracking(widget.task, 'isCompleted', isCompleted.toString());
+    }
+    if (widget.task.priority != priority) {
+      conflictResolutionService.updateFieldTracking(widget.task, 'priority', priority);
+    }
+    if (widget.task.reviewNotes != reviewNotesController.text) {
+      conflictResolutionService.updateFieldTracking(widget.task, 'reviewNotes', reviewNotesController.text);
+    }
 
     try{
       taskBox.put(widget.task);
@@ -114,17 +212,67 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       print('\n🔄 SYNC OPERATION STARTED');
       _logTaskProperties('TASK TO SYNC', widget.task);
       
-      final success = await syncService.syncTask(widget.task);
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Task synced successfully!'),
-            backgroundColor: Color(0xFF28A745),
-            duration: Duration(seconds: 2),
+      // Check for conflicts before syncing
+      final currentTask = getCurrentTask();
+      if (conflictResolutionService.hasConflicts(widget.task, currentTask)) {
+        // Show conflict resolution screen
+        final resolvedTask = await Navigator.of(context).push<Task>(
+          MaterialPageRoute(
+            builder: (context) => ConflictResolutionScreen(
+              localTask: widget.task,
+              remoteTask: currentTask,
+            ),
           ),
         );
+        
+        if (resolvedTask != null) {
+          // Update the widget task with resolved task
+          widget.task.title = resolvedTask.title;
+          widget.task.description = resolvedTask.description;
+          widget.task.isCompleted = resolvedTask.isCompleted;
+          widget.task.priority = resolvedTask.priority;
+          widget.task.reviewNotes = resolvedTask.reviewNotes;
+          widget.task.updatedAt = resolvedTask.updatedAt;
+          widget.task.updatedBy = resolvedTask.updatedBy;
+          widget.task.isSynced = resolvedTask.isSynced;
+          
+          // Update field-level tracking
+          widget.task.titleLastModified = resolvedTask.titleLastModified;
+          widget.task.titleModifiedBy = resolvedTask.titleModifiedBy;
+          widget.task.descriptionLastModified = resolvedTask.descriptionLastModified;
+          widget.task.descriptionModifiedBy = resolvedTask.descriptionModifiedBy;
+          widget.task.isCompletedLastModified = resolvedTask.isCompletedLastModified;
+          widget.task.isCompletedModifiedBy = resolvedTask.isCompletedModifiedBy;
+          widget.task.priorityLastModified = resolvedTask.priorityLastModified;
+          widget.task.priorityModifiedBy = resolvedTask.priorityModifiedBy;
+          widget.task.reviewNotesLastModified = resolvedTask.reviewNotesLastModified;
+          widget.task.reviewNotesModifiedBy = resolvedTask.reviewNotesModifiedBy;
+          
+          // Save the resolved task
+          taskBox.put(widget.task);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Task synced successfully after conflict resolution!'),
+              backgroundColor: Color(0xFF28A745),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
       } else {
-        throw Exception('Sync operation failed');
+        // No conflicts, proceed with normal sync
+        final success = await syncService.syncTask(widget.task);
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Task synced successfully!'),
+              backgroundColor: Color(0xFF28A745),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        } else {
+          throw Exception('Sync operation failed');
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -211,6 +359,58 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     print('=' * 50);
   }
 
+  void _checkForConflicts() {
+    if (!_isOnline) return;
+    
+    // Get all versions of this task from database
+    final query = taskBox.query(Task_.id.equals(widget.task.id)).build();
+    final allTasks = query.find();
+    query.close();
+    
+    // If there are multiple versions, show conflict screen
+    if (allTasks.length > 1) {
+      // Find the most recent version (excluding current widget.task)
+      final otherTasks = allTasks.where((t) => t != widget.task).toList();
+      if (otherTasks.isNotEmpty) {
+        final mostRecentTask = otherTasks.reduce((a, b) => 
+          a.updatedAt.isAfter(b.updatedAt) ? a : b);
+        
+        // Show conflict resolution screen
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ConflictResolutionScreen(
+              localTask: widget.task,
+              remoteTask: mostRecentTask,
+            ),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showConflictScreen() {
+    // Create a fake remote task with different data
+    final remoteTask = Task(
+      id: widget.task.id,
+      title: 'REMOTE: ${widget.task.title}',
+      description: 'REMOTE: ${widget.task.description}',
+      isCompleted: !widget.task.isCompleted,
+      priority: 'HIGH',
+      reviewNotes: 'REMOTE: ${widget.task.reviewNotes}',
+      updatedAt: DateTime.now().subtract(const Duration(hours: 1)),
+      updatedBy: 'remote_user@example.com',
+    );
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => ConflictResolutionScreen(
+          localTask: widget.task,
+          remoteTask: remoteTask,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -239,6 +439,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           },
         ),
         actions: [
+          // Add this button to manually check for conflicts
+          IconButton(
+            onPressed: () => _showConflictScreen(),
+            icon: const Icon(Icons.compare_arrows, color: Colors.white),
+            tooltip: 'Check Conflicts',
+          ),
           if (_isOnline)
             IconButton(
               onPressed: _isSyncing ? null : _syncTask,
