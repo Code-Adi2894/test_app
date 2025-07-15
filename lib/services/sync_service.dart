@@ -37,7 +37,6 @@ class SyncService {
   }
 
 
-
   // Mark task as synced
   void markTaskAsSynced(Task task) {
     task.isSynced = true;
@@ -53,7 +52,6 @@ class SyncService {
     case_.syncStatus = 'synced';
     casesBox.put(case_);
   }
-
 
 
   // Get sync statistics

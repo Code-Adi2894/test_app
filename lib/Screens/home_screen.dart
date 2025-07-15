@@ -13,6 +13,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool isOn = false;
 
   @override
   void initState() {
@@ -66,6 +67,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          Switch(
+            value: isOn,
+            onChanged: (bool value) {
+              setState((){
+                isOn = value;
+              });
+            },
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {

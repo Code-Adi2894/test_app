@@ -29,6 +29,7 @@ class CaseDetailScreen extends StatefulWidget {
 class _CaseDetailScreenState extends State<CaseDetailScreen> {
   bool _isOnline = true;
   late final Connectivity _connectivity;
+  bool isCaseSyncOn = false;
 
   @override
   void initState() {
@@ -451,6 +452,13 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                       ],
                                     ],
                                   ),
+                                  Switch(
+                                      value: isCaseSyncOn,
+                                      onChanged: (bool value){
+                                        setState(() {
+                                          isCaseSyncOn = value;
+                                        });
+                                      })
                                 ],
                               ),
                               onTap: () {

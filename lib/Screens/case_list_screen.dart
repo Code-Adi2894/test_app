@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:test_app/Screens/login_screen.dart';
+import 'package:test_app/widgets/case_card.dart';
 import 'package:test_app/widgets/site_filter_dropdown.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
@@ -32,6 +33,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
   bool _isAutoSyncing = false;
   late final Connectivity _connectivity;
   late final Stream<List<ConnectivityResult>> _connectivityStream;
+  bool isGlobalSyncOn = false;
+  List<bool> caseSyncStates = [];
 
   @override
   void initState() {
@@ -507,110 +510,122 @@ class _CaseListScreenState extends State<CaseListScreen> {
                       return const Center(child: Text('No cases match that site.'));
                     }
 
+                    // case card list
                     return ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 32, 16, 16),
                       itemCount: filtered.length,
                       itemBuilder: (context, i) {
                         final c = filtered[i];
-                        return GestureDetector(
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => CaseDetailScreen(case_: c)),
-                          ),
-                          child: Container(
-                            margin: const EdgeInsets.only(bottom: 20),
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(24),
-                              boxShadow: [
-                                BoxShadow(
-                                    color: Colors.black.withOpacity(0.07),
-                                    blurRadius: 18,
-                                    offset: const Offset(0, 6))
-                              ],
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 22),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                c.name,
-                                                style: const TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            buildSyncStatusIndicator(c),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Row(
-                                          children: [
-                                            Icon(Icons.location_on,
-                                                size: 14,
-                                                color: Colors.grey[600]),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                c.site.target?.name ?? 'No Site',
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        if (c.description != null &&
-                                            c.description!.isNotEmpty) ...[
-                                          const SizedBox(height: 4),
-                                          Text(c.description!,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis),
-                                        ],
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          'Created: ${c.createdAt.toString().substring(0, 19)}',
-                                          style: const TextStyle(
-                                              fontSize: 12,
-                                              color: Color(0xFF9E9E9E)),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 16),
-                                  Column(
-                                    children: [
-                                      if (buildSyncButton(c) != null)
-                                        buildSyncButton(c)!,
-                                      IconButton(
-                                        icon: const Icon(
-                                            Icons.arrow_forward_ios_rounded,
-                                            color: Color(0xFF2196F3)),
-                                        onPressed: () => Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                              builder: (_) =>
-                                                  CaseDetailScreen(case_: c)),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
+                        return CaseCard(cases: c);
+                        // return GestureDetector(
+                        //   onTap: () => Navigator.push(
+                        //     context,
+                        //     MaterialPageRoute(
+                        //         builder: (_) => CaseDetailScreen(case_: c, isGlobalSyncOn: isGlobalSyncOn,)
+                        //     ),
+                        //   ),
+                        //   child: Container(
+                        //     margin: const EdgeInsets.only(bottom: 20),
+                        //     decoration: BoxDecoration(
+                        //       color: Colors.white,
+                        //       borderRadius: BorderRadius.circular(24),
+                        //       boxShadow: [
+                        //         BoxShadow(
+                        //             color: Colors.black.withOpacity(0.07),
+                        //             blurRadius: 18,
+                        //             offset: const Offset(0, 6))
+                        //       ],
+                        //     ),
+                        //     child: Padding(
+                        //       padding: const EdgeInsets.symmetric(
+                        //           horizontal: 24, vertical: 22),
+                        //       child: Row(
+                        //         children: [
+                        //           Expanded(
+                        //             child: Column(
+                        //               crossAxisAlignment: CrossAxisAlignment.start,
+                        //               children: [
+                        //                 Row(
+                        //                   children: [
+                        //                     Expanded(
+                        //                       child: Text(
+                        //                         c.name,
+                        //                         style: const TextStyle(
+                        //                           fontSize: 20,
+                        //                           fontWeight: FontWeight.bold,
+                        //                         ),
+                        //                         maxLines: 1,
+                        //                         overflow: TextOverflow.ellipsis,
+                        //                       ),
+                        //                     ),
+                        //                     const SizedBox(width: 8),
+                        //                     buildSyncStatusIndicator(c),
+                        //                   ],
+                        //                 ),
+                        //                 const SizedBox(height: 6),
+                        //                 Row(
+                        //                   children: [
+                        //                     Icon(Icons.location_on,
+                        //                         size: 14,
+                        //                         color: Colors.grey[600]),
+                        //                     const SizedBox(width: 4),
+                        //                     Expanded(
+                        //                       child: Text(
+                        //                         c.site.target?.name ?? 'No Site',
+                        //                         overflow: TextOverflow.ellipsis,
+                        //                       ),
+                        //                     ),
+                        //                   ],
+                        //                 ),
+                        //                 if (c.description != null &&
+                        //                     c.description!.isNotEmpty) ...[
+                        //                   const SizedBox(height: 4),
+                        //                   Text(c.description!,
+                        //                       maxLines: 2,
+                        //                       overflow: TextOverflow.ellipsis),
+                        //                 ],
+                        //                 const SizedBox(height: 8),
+                        //                 Text(
+                        //                   'Created: ${c.createdAt.toString().substring(0, 19)}',
+                        //                   style: const TextStyle(
+                        //                       fontSize: 12,
+                        //                       color: Color(0xFF9E9E9E)),
+                        //                 ),
+                        //                 Switch(
+                        //                     value: filtered[i].isSynced,
+                        //                     onChanged: (bool value){
+                        //                       setState(() {
+                        //                         isGlobalSyncOn = value;
+                        //                       });
+                        //                     }
+                        //                 )
+                        //               ],
+                        //             ),
+                        //           ),
+                        //           const SizedBox(width: 16),
+                        //           Column(
+                        //             children: [
+                        //               if (buildSyncButton(c) != null)
+                        //                 buildSyncButton(c)!,
+                        //               IconButton(
+                        //                 icon: const Icon(
+                        //                     Icons.arrow_forward_ios_rounded,
+                        //                     color: Color(0xFF2196F3)),
+                        //                 onPressed: () => Navigator.push(
+                        //                   context,
+                        //                   MaterialPageRoute(
+                        //                       builder: (_) =>
+                        //                           CaseDetailScreen(case_: c, isGlobalSyncOn: isGlobalSyncOn,)
+                        //                   ),
+                        //                 ),
+                        //               ),
+                        //             ],
+                        //           ),
+                        //         ],
+                        //       ),
+                        //     ),
+                        //   ),
+                        // );
                       },
                     );
                   },
