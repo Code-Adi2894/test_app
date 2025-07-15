@@ -9,7 +9,6 @@ import '../services/sync_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
-import '../services/conflict_resolution_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();

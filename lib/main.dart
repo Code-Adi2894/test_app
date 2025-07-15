@@ -58,6 +58,9 @@ Future<void>  main() async{
 
   try{
     syncClient.start();
+    syncClient.connectionEvents.listen((event) {
+      print('Sync event: $event');
+    });
     print("Sync client started");
   } catch(e){
     print("Sync client error: $e");

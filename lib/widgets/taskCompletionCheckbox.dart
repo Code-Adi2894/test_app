@@ -6,10 +6,10 @@ class TaskCompletionCheckbox extends StatelessWidget {
   final ValueChanged<bool> onChanged;
 
   const TaskCompletionCheckbox({
-    Key? key,
+    super.key,
     required this.task,
     required this.onChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

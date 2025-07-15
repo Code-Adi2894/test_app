@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import 'package:test_app/widgets/task_card.dart';
-import 'package:test_app/widgets/taskCompletionCheckbox.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
-import '../services/user_service.dart';
 import '../services/sync_service.dart';
 import '../widgets/offline_indicator.dart';
-import '../widgets/user_info_widget.dart';
-import './tasks_detail_screen.dart';
 import './add_task_detail_dialog.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
