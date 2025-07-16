@@ -54,6 +54,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   };
   Task? _lastProcessedTask;
   bool _isProcessingChanges = false;
+  bool _hasShownUpdateNotification = false;
 
 
   @override
@@ -93,6 +94,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           _fieldModified['title'] = true;
           _isEditing = true;
         });
+        _hasShownUpdateNotification = false; // Reset notification when user starts editing
       }
     });
 
@@ -102,6 +104,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           _fieldModified['description'] = true;
           _isEditing = true;
         });
+        _hasShownUpdateNotification = false; // Reset notification when user starts editing
       }
     });
 
@@ -111,6 +114,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           _fieldModified['reviewNotes'] = true;
           _isEditing = true;
         });
+        _hasShownUpdateNotification = false; // Reset notification when user starts editing
       }
     });
   }
@@ -121,6 +125,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         _fieldModified[fieldName] = true;
         _isEditing = true;
       });
+      _hasShownUpdateNotification = false; // Reset notification when user starts editing
     }
   }
 
@@ -136,6 +141,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       };
     });
     _storeOriginalValues();
+    _hasShownUpdateNotification = false; // Reset notification flag
   }
 
   // Smart conflict resolution method
@@ -148,6 +154,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
     print('\n🔄 HANDLING INCOMING CHANGES WHILE EDITING');
     _logTaskComparison(widget.task, incomingTask);
+
+    // Check if there are any actual changes from another user
+    bool hasChanges = incomingTask.title != widget.task.title ||
+                     incomingTask.description != widget.task.description ||
+                     incomingTask.reviewNotes != widget.task.reviewNotes ||
+                     incomingTask.isCompleted != widget.task.isCompleted ||
+                     incomingTask.priority != widget.task.priority ||
+                     incomingTask.images.length != widget.task.images.length;
+
+    // Show notification if there are changes and we haven't shown one yet
+    if (hasChanges && !_hasShownUpdateNotification) {
+      _showUpdateNotification(incomingTask);
+      _hasShownUpdateNotification = true;
+    }
 
     // Only update fields that haven't been modified by the user
     if (!_fieldModified['title']! && incomingTask.title != titleController.text) {
@@ -222,6 +242,350 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     });
   }
 
+  void _showUpdateNotification(Task updatedTask) {
+    // Show a toast notification about the update
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Task Updated',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    '${updatedTask.updatedBy} updated this task. Choose which changes to accept.',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF2196F3),
+        duration: const Duration(seconds: 6),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        action: SnackBarAction(
+          label: 'Review Changes',
+          textColor: Colors.white,
+          onPressed: () {
+            _showConflictResolutionDialog(updatedTask);
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showConflictResolutionDialog(Task updatedTask) {
+    // Create a map to track which changes the user wants to accept
+    Map<String, bool> acceptedChanges = {};
+    
+    // Initialize with all changes as accepted by default
+    if (updatedTask.title != widget.task.title) acceptedChanges['title'] = true;
+    if (updatedTask.description != widget.task.description) acceptedChanges['description'] = true;
+    if (updatedTask.reviewNotes != widget.task.reviewNotes) acceptedChanges['reviewNotes'] = true;
+    if (updatedTask.isCompleted != widget.task.isCompleted) acceptedChanges['isCompleted'] = true;
+    if (updatedTask.priority != widget.task.priority) acceptedChanges['priority'] = true;
+    if (updatedTask.images.length != widget.task.images.length) acceptedChanges['images'] = true;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.merge_type, color: Color(0xFF2196F3)),
+                  const SizedBox(width: 8),
+                  const Text('Resolve Conflicts'),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Updated by: ${updatedTask.updatedBy}',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2196F3),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Time: ${updatedTask.updatedAt.toString().substring(0, 19)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6C757D),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Select which changes to accept:',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildConflictResolutionList(updatedTask, acceptedChanges, setDialogState),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _applySelectedChanges(updatedTask, acceptedChanges);
+                  },
+                  child: const Text('Apply Selected'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildConflictResolutionList(Task updatedTask, Map<String, bool> acceptedChanges, StateSetter setDialogState) {
+    List<Widget> changes = [];
+    
+    if (updatedTask.title != widget.task.title) {
+      changes.add(_buildConflictResolutionItem(
+        'Title', 
+        widget.task.title, 
+        updatedTask.title, 
+        acceptedChanges['title'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['title'] = value;
+          });
+        },
+      ));
+    }
+    
+    if (updatedTask.description != widget.task.description) {
+      changes.add(_buildConflictResolutionItem(
+        'Description', 
+        widget.task.description, 
+        updatedTask.description, 
+        acceptedChanges['description'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['description'] = value;
+          });
+        },
+      ));
+    }
+    
+    if (updatedTask.reviewNotes != widget.task.reviewNotes) {
+      changes.add(_buildConflictResolutionItem(
+        'Review Notes', 
+        widget.task.reviewNotes, 
+        updatedTask.reviewNotes, 
+        acceptedChanges['reviewNotes'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['reviewNotes'] = value;
+          });
+        },
+      ));
+    }
+    
+    if (updatedTask.isCompleted != widget.task.isCompleted) {
+      changes.add(_buildConflictResolutionItem(
+        'Completed', 
+        widget.task.isCompleted.toString(), 
+        updatedTask.isCompleted.toString(), 
+        acceptedChanges['isCompleted'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['isCompleted'] = value;
+          });
+        },
+      ));
+    }
+    
+    if (updatedTask.priority != widget.task.priority) {
+      changes.add(_buildConflictResolutionItem(
+        'Priority', 
+        widget.task.priority, 
+        updatedTask.priority, 
+        acceptedChanges['priority'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['priority'] = value;
+          });
+        },
+      ));
+    }
+    
+    if (updatedTask.images.length != widget.task.images.length) {
+      changes.add(_buildConflictResolutionItem(
+        'Images', 
+        '${widget.task.images.length} images', 
+        '${updatedTask.images.length} images', 
+        acceptedChanges['images'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['images'] = value;
+          });
+        },
+      ));
+    }
+    
+    if (changes.isEmpty) {
+      changes.add(const Text(
+        'No conflicts detected',
+        style: TextStyle(
+          fontStyle: FontStyle.italic,
+          color: Color(0xFF6C757D),
+        ),
+      ));
+    }
+    
+    return Column(
+      children: changes,
+    );
+  }
+
+  Widget _buildConflictResolutionItem(String fieldName, String oldValue, String newValue, bool isAccepted, Function(bool) onChanged) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: isAccepted ? const Color(0xFFE8F5E8) : const Color(0xFFFFF3CD),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isAccepted ? const Color(0xFF28A745) : const Color(0xFFFFC107),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Checkbox(
+                value: isAccepted,
+                onChanged: (value) => onChanged(value ?? false),
+                activeColor: const Color(0xFF28A745),
+              ),
+              Expanded(
+                child: Text(
+                  fieldName,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+          if (isAccepted) ...[
+            const SizedBox(height: 4),
+            Text(
+              'Will be updated to: $newValue',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF28A745),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 4),
+            Text(
+              'Current value: $oldValue',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFF6C757D),
+              ),
+            ),
+            Text(
+              'New value: $newValue',
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFFDC3545),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _applySelectedChanges(Task updatedTask, Map<String, bool> acceptedChanges) {
+    print('\n🔄 APPLYING SELECTED CHANGES');
+    
+    // Apply only the selected changes
+    if (acceptedChanges['title'] == true && !_fieldModified['title']!) {
+      print('✅ Applying title change: "${widget.task.title}" → "${updatedTask.title}"');
+      titleController.text = updatedTask.title;
+    }
+    
+    if (acceptedChanges['description'] == true && !_fieldModified['description']!) {
+      print('✅ Applying description change: "${widget.task.description}" → "${updatedTask.description}"');
+      descriptionController.text = updatedTask.description;
+    }
+    
+    if (acceptedChanges['reviewNotes'] == true && !_fieldModified['reviewNotes']!) {
+      print('✅ Applying review notes change: "${widget.task.reviewNotes}" → "${updatedTask.reviewNotes}"');
+      reviewNotesController.text = updatedTask.reviewNotes;
+    }
+    
+    if (acceptedChanges['isCompleted'] == true && !_fieldModified['isCompleted']!) {
+      print('✅ Applying isCompleted change: ${widget.task.isCompleted} → ${updatedTask.isCompleted}');
+      setState(() {
+        isCompleted = updatedTask.isCompleted;
+      });
+    }
+    
+    if (acceptedChanges['priority'] == true && !_fieldModified['priority']!) {
+      print('✅ Applying priority change: "${widget.task.priority}" → "${updatedTask.priority}"');
+      setState(() {
+        priority = updatedTask.priority;
+      });
+    }
+    
+    if (acceptedChanges['images'] == true) {
+      print('✅ Applying images change: ${widget.task.images.length} → ${updatedTask.images.length} images');
+      widget.task.images.clear();
+      widget.task.images.addAll(updatedTask.images);
+    }
+    
+    // Update metadata
+    widget.task.updatedAt = updatedTask.updatedAt;
+    widget.task.updatedBy = updatedTask.updatedBy;
+    widget.task.isSynced = updatedTask.isSynced;
+    
+    // Show confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Applied ${acceptedChanges.values.where((v) => v).length} changes'),
+        backgroundColor: const Color(0xFF28A745),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+
+
   void _handleBackPress() {
     if (_isEditing) {
       showDialog(
@@ -286,6 +650,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       // Reset editing state after successful save
       _resetEditingState();
       _lastProcessedTask = null; // Reset to allow processing new changes
+      _hasShownUpdateNotification = false; // Reset notification flag
       
       // Log the task after saving
       print('\n✅ SAVE OPERATION COMPLETED');
