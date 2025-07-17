@@ -55,6 +55,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   Task? _lastProcessedTask;
   bool _isProcessingChanges = false;
   bool _hasShownUpdateNotification = false;
+  DateTime? _lastProcessTime;
 
 
   @override
@@ -146,28 +147,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   // Smart conflict resolution method
   void _handleIncomingChanges(Task incomingTask) {
-    if (!_isEditing) {
-      // If not editing, accept all changes
-      _updateControllersFromTask(incomingTask);
-      return;
-    }
+    try {
+      if (!_isEditing) {
+        // If not editing, accept all changes
+        _updateControllersFromTask(incomingTask);
+        return;
+      }
 
-    print('\n🔄 HANDLING INCOMING CHANGES WHILE EDITING');
-    _logTaskComparison(widget.task, incomingTask);
+      print('\n🔄 HANDLING INCOMING CHANGES WHILE EDITING');
+      _logTaskComparison(widget.task, incomingTask);
 
-    // Check if there are any actual changes from another user
-    bool hasChanges = incomingTask.title != widget.task.title ||
-                     incomingTask.description != widget.task.description ||
-                     incomingTask.reviewNotes != widget.task.reviewNotes ||
-                     incomingTask.isCompleted != widget.task.isCompleted ||
-                     incomingTask.priority != widget.task.priority ||
-                     incomingTask.images.length != widget.task.images.length;
+      // Check if there are any actual changes from another user
+      bool hasChanges = incomingTask.title != widget.task.title ||
+                       incomingTask.description != widget.task.description ||
+                       incomingTask.reviewNotes != widget.task.reviewNotes ||
+                       incomingTask.isCompleted != widget.task.isCompleted ||
+                       incomingTask.priority != widget.task.priority ||
+                       incomingTask.images.length != widget.task.images.length;
 
-    // Show notification if there are changes and we haven't shown one yet
-    if (hasChanges && !_hasShownUpdateNotification) {
-      _showUpdateNotification(incomingTask);
-      _hasShownUpdateNotification = true;
-    }
+      // Show notification if there are changes and we haven't shown one yet
+      if (hasChanges && !_hasShownUpdateNotification) {
+        _showUpdateNotification(incomingTask);
+        _hasShownUpdateNotification = true;
+      }
 
     // Only update fields that haven't been modified by the user
     if (!_fieldModified['title']! && incomingTask.title != titleController.text) {
@@ -224,6 +226,10 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         }
       });
     }
+    } catch (e) {
+      print('Error in _handleIncomingChanges: $e');
+      // Don't throw the error, just log it to prevent UI errors
+    }
   }
 
   void _updateControllersFromTask(Task task) {
@@ -243,13 +249,23 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   }
 
   void _showUpdateNotification(Task updatedTask) {
-    // Show a toast notification about the update
-    ScaffoldMessenger.of(context).showSnackBar(
+    try {
+      // Count the number of changes
+      int changeCount = 0;
+      if (updatedTask.title != widget.task.title) changeCount++;
+      if (updatedTask.description != widget.task.description) changeCount++;
+      if (updatedTask.reviewNotes != widget.task.reviewNotes) changeCount++;
+      if (updatedTask.isCompleted != widget.task.isCompleted) changeCount++;
+      if (updatedTask.priority != widget.task.priority) changeCount++;
+      if (updatedTask.images.length != widget.task.images.length) changeCount++;
+
+      // Show a toast notification about the update
+      ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Row(
           children: [
             const Icon(
-              Icons.info_outline,
+              Icons.sync_problem,
               color: Colors.white,
               size: 20,
             ),
@@ -260,14 +276,14 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Task Updated',
+                    'Conflict Detected',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 14,
                     ),
                   ),
                   Text(
-                    '${updatedTask.updatedBy} updated this task. Choose which changes to accept.',
+                    '${updatedTask.updatedBy} made $changeCount change${changeCount == 1 ? '' : 's'} to this task. Review and resolve conflicts.',
                     style: const TextStyle(fontSize: 12),
                   ),
                 ],
@@ -275,8 +291,8 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             ),
           ],
         ),
-        backgroundColor: const Color(0xFF2196F3),
-        duration: const Duration(seconds: 6),
+        backgroundColor: const Color(0xFFFF9800),
+        duration: const Duration(seconds: 8),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
         shape: RoundedRectangleBorder(
@@ -291,19 +307,27 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         ),
       ),
     );
+    } catch (e) {
+      print('Error showing update notification: $e');
+      // Don't throw the error, just log it to prevent UI errors
+    }
   }
 
   void _showConflictResolutionDialog(Task updatedTask) {
-    // Create a map to track which changes the user wants to accept
-    Map<String, bool> acceptedChanges = {};
-    
-    // Initialize with all changes as accepted by default
-    if (updatedTask.title != widget.task.title) acceptedChanges['title'] = true;
-    if (updatedTask.description != widget.task.description) acceptedChanges['description'] = true;
-    if (updatedTask.reviewNotes != widget.task.reviewNotes) acceptedChanges['reviewNotes'] = true;
-    if (updatedTask.isCompleted != widget.task.isCompleted) acceptedChanges['isCompleted'] = true;
-    if (updatedTask.priority != widget.task.priority) acceptedChanges['priority'] = true;
-    if (updatedTask.images.length != widget.task.images.length) acceptedChanges['images'] = true;
+    try {
+      // Create a map to track which changes the user wants to accept
+      Map<String, bool> acceptedChanges = {};
+      
+      // Initialize with all changes as accepted by default
+      if (updatedTask.title != widget.task.title) acceptedChanges['title'] = true;
+      if (updatedTask.description != widget.task.description) acceptedChanges['description'] = true;
+      if (updatedTask.reviewNotes != widget.task.reviewNotes) acceptedChanges['reviewNotes'] = true;
+      if (updatedTask.isCompleted != widget.task.isCompleted) acceptedChanges['isCompleted'] = true;
+      if (updatedTask.priority != widget.task.priority) acceptedChanges['priority'] = true;
+      if (updatedTask.images.length != widget.task.images.length) acceptedChanges['images'] = true;
+
+      // Count total changes
+      int totalChanges = acceptedChanges.length;
 
     showDialog(
       context: context,
@@ -318,33 +342,87 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                   const Text('Resolve Conflicts'),
                 ],
               ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Updated by: ${updatedTask.updatedBy}',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2196F3),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // User info section
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF2196F3), width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.person, color: Color(0xFF2196F3), size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Updated by: ${updatedTask.updatedBy}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2196F3),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, color: Color(0xFF2196F3), size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Time: ${updatedTask.updatedAt.toString().substring(0, 19)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF1976D2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Time: ${updatedTask.updatedAt.toString().substring(0, 19)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF6C757D),
+                    const SizedBox(height: 16),
+                    
+                    // Summary section
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFFFC107), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Color(0xFFFFC107), size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$totalChanges field${totalChanges == 1 ? '' : 's'} changed by ${updatedTask.updatedBy}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Select which changes to accept:',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildConflictResolutionList(updatedTask, acceptedChanges, setDialogState),
-                ],
+                    const SizedBox(height: 16),
+                    
+                    const Text(
+                      'Select which changes to accept:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildConflictResolutionList(updatedTask, acceptedChanges, setDialogState),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
@@ -364,6 +442,17 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         );
       },
     );
+    } catch (e) {
+      print('Error showing conflict resolution dialog: $e');
+      // Show a simple error message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error showing conflict dialog: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   Widget _buildConflictResolutionList(Task updatedTask, Map<String, bool> acceptedChanges, StateSetter setDialogState) {
@@ -380,6 +469,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             acceptedChanges['title'] = value;
           });
         },
+        _getChangeDescription('title', widget.task.title, updatedTask.title),
       ));
     }
     
@@ -394,6 +484,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             acceptedChanges['description'] = value;
           });
         },
+        _getChangeDescription('description', widget.task.description, updatedTask.description),
       ));
     }
     
@@ -408,6 +499,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             acceptedChanges['reviewNotes'] = value;
           });
         },
+        _getChangeDescription('review notes', widget.task.reviewNotes, updatedTask.reviewNotes),
       ));
     }
     
@@ -422,6 +514,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             acceptedChanges['isCompleted'] = value;
           });
         },
+        _getChangeDescription('completion status', widget.task.isCompleted.toString(), updatedTask.isCompleted.toString()),
       ));
     }
     
@@ -436,6 +529,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             acceptedChanges['priority'] = value;
           });
         },
+        _getChangeDescription('priority', widget.task.priority, updatedTask.priority),
       ));
     }
     
@@ -450,6 +544,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             acceptedChanges['images'] = value;
           });
         },
+        _getChangeDescription('images', '${widget.task.images.length} images', '${updatedTask.images.length} images'),
       ));
     }
     
@@ -468,10 +563,20 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     );
   }
 
-  Widget _buildConflictResolutionItem(String fieldName, String oldValue, String newValue, bool isAccepted, Function(bool) onChanged) {
+  String _getChangeDescription(String fieldName, String oldValue, String newValue) {
+    if (oldValue.isEmpty && newValue.isNotEmpty) {
+      return 'Added $fieldName: "$newValue"';
+    } else if (oldValue.isNotEmpty && newValue.isEmpty) {
+      return 'Removed $fieldName: "$oldValue"';
+    } else {
+      return 'Changed $fieldName from "$oldValue" to "$newValue"';
+    }
+  }
+
+  Widget _buildConflictResolutionItem(String fieldName, String oldValue, String newValue, bool isAccepted, Function(bool) onChanged, String changeDescription) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 4),
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: isAccepted ? const Color(0xFFE8F5E8) : const Color(0xFFFFF3CD),
         borderRadius: BorderRadius.circular(8),
@@ -491,37 +596,142 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 activeColor: const Color(0xFF28A745),
               ),
               Expanded(
-                child: Text(
-                  fieldName,
-                  style: const TextStyle(fontWeight: FontWeight.w600),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fieldName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      changeDescription,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF6C757D),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 8),
           if (isAccepted) ...[
-            const SizedBox(height: 4),
-            Text(
-              'Will be updated to: $newValue',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF28A745),
-                fontWeight: FontWeight.w500,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD4EDDA),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFF28A745), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Color(0xFF28A745), size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Will be updated to:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF28A745),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    newValue.isEmpty ? '(empty)' : newValue,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF155724),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
             ),
           ] else ...[
-            const SizedBox(height: 4),
-            Text(
-              'Current value: $oldValue',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFF6C757D),
+            // Show detailed diff view
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFF6C757D), width: 1),
               ),
-            ),
-            Text(
-              'New value: $newValue',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xFFDC3545),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.remove_circle, color: Color(0xFFDC3545), size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Current value:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFDC3545),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: const Color(0xFFDC3545), width: 0.5),
+                    ),
+                    child: Text(
+                      oldValue.isEmpty ? '(empty)' : oldValue,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFC62828),
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.add_circle, color: Color(0xFF28A745), size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'New value:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF28A745),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E8),
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: const Color(0xFF28A745), width: 0.5),
+                    ),
+                    child: Text(
+                      newValue.isEmpty ? '(empty)' : newValue,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF2E7D32),
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -881,27 +1091,40 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                 final task = snapshot.data ?? widget.task;
                 
                 // Only process changes if we're not already processing and if this is a new task
-                if (!_isProcessingChanges && (_lastProcessedTask == null || _lastProcessedTask!.updatedAt != task.updatedAt)) {
+                // Add debounce to prevent rapid processing
+                final now = DateTime.now();
+                final shouldProcess = !_isProcessingChanges && 
+                                    task != null && 
+                                    (_lastProcessedTask == null || _lastProcessedTask!.updatedAt != task.updatedAt) &&
+                                    (_lastProcessTime == null || now.difference(_lastProcessTime!).inMilliseconds > 500);
+                
+                if (shouldProcess) {
                   _isProcessingChanges = true;
+                  _lastProcessTime = now;
                   
-                  // Log local and remote tasks for debugging
-                  _logTaskProperties('LOCAL (widget.task)', widget.task);
-                  _logTaskProperties('REMOTE (from stream)', task);
-                  
-                  // Use smart conflict resolution instead of always updating
-                  _handleIncomingChanges(task);
-                  
-                  // Mark this task as processed
-                  _lastProcessedTask = task;
-                  
-                  // Reset processing flag after a short delay
-                  Future.delayed(const Duration(milliseconds: 100), () {
-                    if (mounted) {
-                      setState(() {
-                        _isProcessingChanges = false;
-                      });
-                    }
-                  });
+                  try {
+                    // Log local and remote tasks for debugging
+                    _logTaskProperties('LOCAL (widget.task)', widget.task);
+                    _logTaskProperties('REMOTE (from stream)', task);
+                    
+                    // Use smart conflict resolution instead of always updating
+                    _handleIncomingChanges(task);
+                    
+                    // Mark this task as processed
+                    _lastProcessedTask = task;
+                  } catch (e) {
+                    print('Error processing incoming changes: $e');
+                    // Don't show error to user, just log it
+                  } finally {
+                    // Reset processing flag after a short delay
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (mounted) {
+                        setState(() {
+                          _isProcessingChanges = false;
+                        });
+                      }
+                    });
+                  }
                 }
 
                 return SingleChildScrollView(
