@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
+import 'package:test_app/widgets/case_detail_case_card.dart';
 import 'package:test_app/widgets/task_card.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
@@ -108,106 +109,107 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
             child: Column(
               children: [
                 // Case Details Card
-                Container(
-                  margin: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    widget.case_.name,
-                                    style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold,
-                                      color: Color(0xFF495057),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Case Details',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Color(0xFF6C757D),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Sync status indicator
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: widget.case_.isSynced 
-                                  ? const Color(0xFFE8F5E8) 
-                                  : const Color(0xFFFFEBEE),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    widget.case_.isSynced ? Icons.check_circle : Icons.sync,
-                                    size: 14,
-                                    color: widget.case_.isSynced 
-                                      ? const Color(0xFF28A745) 
-                                      : const Color(0xFFDC3545),
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    widget.case_.isSynced ? 'Synced' : 'Pending',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w600,
-                                      color: widget.case_.isSynced 
-                                        ? const Color(0xFF28A745) 
-                                        : const Color(0xFFDC3545),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        if (widget.case_.description != null && widget.case_.description!.isNotEmpty)
-                          Text(
-                            widget.case_.description!,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Color(0xFF6C757D),
-                            ),
-                          ),
-                        const SizedBox(height: 8),
-                        if (widget.case_.isSynced)
-                          Text(
-                            'Last synced: ${widget.case_.lastSyncedAt?.toString().substring(0, 19) ?? 'Never'}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF9E9E9E),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
+                CaseDetailCaseCard(cases: widget.case_),
+                // Container(
+                //   margin: const EdgeInsets.all(16),
+                //   decoration: BoxDecoration(
+                //     color: Colors.white,
+                //     borderRadius: BorderRadius.circular(16),
+                //     boxShadow: [
+                //       BoxShadow(
+                //         color: Colors.black.withOpacity(0.1),
+                //         blurRadius: 10,
+                //         offset: const Offset(0, 5),
+                //       ),
+                //     ],
+                //   ),
+                //   child: Padding(
+                //     padding: const EdgeInsets.all(20),
+                //     child: Column(
+                //       crossAxisAlignment: CrossAxisAlignment.start,
+                //       children: [
+                //         Row(
+                //           children: [
+                //             Expanded(
+                //               child: Column(
+                //                 crossAxisAlignment: CrossAxisAlignment.start,
+                //                 children: [
+                //                   Text(
+                //                     widget.case_.name,
+                //                     style: const TextStyle(
+                //                       fontSize: 20,
+                //                       fontWeight: FontWeight.bold,
+                //                       color: Color(0xFF495057),
+                //                     ),
+                //                   ),
+                //                   const SizedBox(height: 4),
+                //                   // Text(
+                //                   //   'Case Details',
+                //                   //   style: const TextStyle(
+                //                   //     fontSize: 14,
+                //                   //     color: Color(0xFF6C757D),
+                //                   //   ),
+                //                   // ),
+                //                 ],
+                //               ),
+                //             ),
+                //             // Sync status indicator
+                //             Container(
+                //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                //               decoration: BoxDecoration(
+                //                 color: widget.case_.isSynced
+                //                   ? const Color(0xFFE8F5E8)
+                //                   : const Color(0xFFFFEBEE),
+                //                 borderRadius: BorderRadius.circular(12),
+                //               ),
+                //               child: Row(
+                //                 mainAxisSize: MainAxisSize.min,
+                //                 children: [
+                //                   Icon(
+                //                     widget.case_.isSynced ? Icons.check_circle : Icons.sync,
+                //                     size: 14,
+                //                     color: widget.case_.isSynced
+                //                       ? const Color(0xFF28A745)
+                //                       : const Color(0xFFDC3545),
+                //                   ),
+                //                   const SizedBox(width: 4),
+                //                   Text(
+                //                     widget.case_.isSynced ? 'Synced' : 'Pending',
+                //                     style: TextStyle(
+                //                       fontSize: 12,
+                //                       fontWeight: FontWeight.w600,
+                //                       color: widget.case_.isSynced
+                //                         ? const Color(0xFF28A745)
+                //                         : const Color(0xFFDC3545),
+                //                     ),
+                //                   ),
+                //                 ],
+                //               ),
+                //             ),
+                //           ],
+                //         ),
+                //         const SizedBox(height: 12),
+                //         if (widget.case_.description != null && widget.case_.description!.isNotEmpty)
+                //           Text(
+                //             widget.case_.description!,
+                //             style: const TextStyle(
+                //               fontSize: 14,
+                //               color: Color(0xFF6C757D),
+                //             ),
+                //           ),
+                //         const SizedBox(height: 8),
+                //         if (widget.case_.isSynced)
+                //           Text(
+                //             'Last synced: ${widget.case_.lastSyncedAt?.toString().substring(0, 19) ?? 'Never'}',
+                //             style: const TextStyle(
+                //               fontSize: 12,
+                //               color: Color(0xFF9E9E9E),
+                //             ),
+                //           ),
+                //       ],
+                //     ),
+                //   ),
+                // ),
                 // Tasks Header
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
@@ -308,7 +310,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                           ),
                         );
                       }
-
                       final tasks = snapshot.data!;
                       return ListView.builder(
                         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -320,153 +321,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                               onSync: (task) => _syncTask(task, context),
                               isOnline: _isOnline
                           );
-                          // return Container(
-                          //   margin: const EdgeInsets.only(bottom: 12),
-                          //   decoration: BoxDecoration(
-                          //     color: const Color(0xFFF3F1FC), // pastel card
-                          //     borderRadius: BorderRadius.circular(24),
-                          //     boxShadow: [
-                          //       BoxShadow(
-                          //         color: Colors.black.withOpacity(0.06),
-                          //         blurRadius: 8,
-                          //         offset: const Offset(0, 2),
-                          //       ),
-                          //     ],
-                          //   ),
-                          //   child: ListTile(
-                          //     contentPadding: const EdgeInsets.all(20),
-                          //     title: Row(
-                          //       children: [
-                          //         Expanded(
-                          //           child: Text(
-                          //             task.title,
-                          //             style: const TextStyle(
-                          //               fontSize: 16,
-                          //               fontWeight: FontWeight.w600,
-                          //               color: Color(0xFF495057),
-                          //             ),
-                          //           ),
-                          //         ),
-                          //         // Task sync status indicator
-                          //         Container(
-                          //           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                          //           decoration: BoxDecoration(
-                          //             color: task.isSynced
-                          //               ? const Color(0xFFE8F5E8)
-                          //               : const Color(0xFFFFEBEE),
-                          //             borderRadius: BorderRadius.circular(8),
-                          //           ),
-                          //           child: Icon(
-                          //             task.isSynced ? Icons.check_circle : Icons.sync,
-                          //             size: 12,
-                          //             color: task.isSynced
-                          //               ? const Color(0xFF28A745)
-                          //               : const Color(0xFFDC3545),
-                          //           ),
-                          //         ),
-                          //       ],
-                          //     ),
-                          //     subtitle: Column(
-                          //       crossAxisAlignment: CrossAxisAlignment.start,
-                          //       children: [
-                          //         const SizedBox(height: 4),
-                          //         Text(
-                          //           task.description,
-                          //           style: const TextStyle(
-                          //             fontSize: 14,
-                          //             color: Color(0xFF6C757D),
-                          //           ),
-                          //           maxLines: 2,
-                          //           overflow: TextOverflow.ellipsis,
-                          //         ),
-                          //         const SizedBox(height: 8),
-                          //         // Task metadata
-                          //         Row(
-                          //           children: [
-                          //             Container(
-                          //               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          //               decoration: BoxDecoration(
-                          //                 color: _getPriorityColor(task.priority).withOpacity(0.2),
-                          //                 borderRadius: BorderRadius.circular(12),
-                          //               ),
-                          //               child: Text(
-                          //                 task.priority,
-                          //                 style: TextStyle(
-                          //                   fontSize: 12,
-                          //                   color: _getPriorityColor(task.priority),
-                          //                   fontWeight: FontWeight.w500,
-                          //                 ),
-                          //               ),
-                          //             ),
-                          //             const SizedBox(width: 8),
-                          //             Icon(
-                          //               task.isCompleted ? Icons.check_circle : Icons.radio_button_unchecked,
-                          //               color: task.isCompleted ? Colors.green : const Color(0xFF6C757D),
-                          //               size: 16,
-                          //             ),
-                          //             const Spacer(),
-                          //             // Task sync button - only show when online
-                          //             if (_isOnline)
-                          //               IconButton(
-                          //                 onPressed: () => _syncTask(task),
-                          //                 icon: const Icon(
-                          //                   Icons.sync,
-                          //                   size: 16,
-                          //                   color: Color(0xFF2196F3),
-                          //                 ),
-                          //                 tooltip: 'Sync Task',
-                          //                 padding: EdgeInsets.zero,
-                          //                 constraints: const BoxConstraints(),
-                          //               ),
-                          //           ],
-                          //         ),
-                          //         const SizedBox(height: 8),
-                          //         // Last updated and updated by info
-                          //         Row(
-                          //           children: [
-                          //             Icon(
-                          //               Icons.access_time,
-                          //               size: 12,
-                          //               color: const Color(0xFF9E9E9E),
-                          //             ),
-                          //             const SizedBox(width: 4),
-                          //             Text(
-                          //               'Updated: ${task.updatedAt.toString().substring(0, 19)}',
-                          //               style: const TextStyle(
-                          //                 fontSize: 11,
-                          //                 color: Color(0xFF9E9E9E),
-                          //               ),
-                          //             ),
-                          //             const SizedBox(width: 16),
-                          //             if (task.updatedBy.isNotEmpty) ...[
-                          //               Icon(
-                          //                 Icons.person,
-                          //                 size: 12,
-                          //                 color: const Color(0xFF9E9E9E),
-                          //               ),
-                          //               const SizedBox(width: 4),
-                          //               Text(
-                          //                 'By: ${task.updatedBy}',
-                          //                 style: const TextStyle(
-                          //                   fontSize: 11,
-                          //                   color: Color(0xFF9E9E9E),
-                          //                 ),
-                          //               ),
-                          //             ],
-                          //           ],
-                          //         ),
-                          //       ],
-                          //     ),
-                          //     onTap: () {
-                          //       Navigator.push(
-                          //         context,
-                          //         MaterialPageRoute(
-                          //           builder: (context) => TaskDetailScreen(task: task),
-                          //         ),
-                          //       );
-                          //     },
-                          //   ),
-                          // );
+
                         },
                       );
                     },
@@ -507,19 +362,6 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
           duration: const Duration(seconds: 2),
         ),
       );
-    }
-  }
-
-  Color _getPriorityColor(String priority) {
-    switch (priority.toUpperCase()) {
-      case 'HIGH':
-        return const Color(0xFFDC3545);
-      case 'MEDIUM':
-        return const Color(0xFFFFC107);
-      case 'LOW':
-        return const Color(0xFF28A745);
-      default:
-        return const Color(0xFF6C757D);
     }
   }
 } 
