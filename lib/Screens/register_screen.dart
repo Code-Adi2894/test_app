@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
-import '../objectbox.g.dart';
 import '../services/user_service.dart';
 import 'login_screen.dart';
 

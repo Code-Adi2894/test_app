@@ -13,10 +13,10 @@ class SiteFilterDropdown extends StatelessWidget {
   final ValueChanged<String?> onSiteChanged;
 
   const SiteFilterDropdown({
-    Key? key,
+    super.key,
     required this.selectedSite,
     required this.onSiteChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +46,7 @@ class SiteFilterDropdown extends StatelessWidget {
                 borderRadius: BorderRadius.circular(8.0),
               ),
               filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceVariant,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
             icon: Icon(
               Icons.arrow_drop_down,

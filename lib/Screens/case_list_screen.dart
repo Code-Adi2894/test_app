@@ -19,7 +19,7 @@ Stream<List<Cases>> get caseStream =>
     caseBox.query().watch(triggerImmediately: true).map((q) => q.find());
 
 class CaseListScreen extends StatefulWidget {
-  const CaseListScreen({Key? key}) : super(key: key);
+  const CaseListScreen({super.key});
 
   @override
   _CaseListScreenState createState() => _CaseListScreenState();
