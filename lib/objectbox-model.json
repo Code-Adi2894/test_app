@@ -1,0 +1,237 @@
+{
+  "_note1": "KEEP THIS FILE! Check it into a version control system (VCS) like git.",
+  "_note2": "ObjectBox manages crucial IDs for your object model. See docs for details.",
+  "_note3": "If you have VCS merge conflicts, you must resolve them according to ObjectBox docs.",
+  "entities": [
+    {
+      "id": "1:5712077873313871471",
+      "lastPropertyId": "9:7631671145230676511",
+      "name": "Cases",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:4125713565225070132",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:3774082803687343591",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "3:6000888066900675511",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "4:1450820917844275247",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "5:5459268465396391194",
+          "name": "updatedAt",
+          "type": 10
+        },
+        {
+          "id": "6:1923613174384426294",
+          "name": "isSynced",
+          "type": 1
+        },
+        {
+          "id": "7:3066571714150893922",
+          "name": "lastSyncedAt",
+          "type": 10
+        },
+        {
+          "id": "8:6441016215821852377",
+          "name": "syncStatus",
+          "type": 9
+        },
+        {
+          "id": "9:7631671145230676511",
+          "name": "siteId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "1:6839716532565889593",
+          "relationTarget": "Site"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "2:3786822843475710558",
+      "lastPropertyId": "6:5451942228345947471",
+      "name": "Site",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:7158431020863637209",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:2587707043108763662",
+          "name": "name",
+          "type": 9
+        },
+        {
+          "id": "3:6044373324950649794",
+          "name": "address",
+          "type": 9
+        },
+        {
+          "id": "4:2757948570619803652",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "5:7746401910782345397",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "6:5451942228345947471",
+          "name": "updatedAt",
+          "type": 10
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "3:1329848112299266056",
+      "lastPropertyId": "10:5165483318901163621",
+      "name": "Task",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:8517408722624501693",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:653296483172589613",
+          "name": "title",
+          "type": 9
+        },
+        {
+          "id": "3:8044501156504776500",
+          "name": "description",
+          "type": 9
+        },
+        {
+          "id": "4:3352148508940143752",
+          "name": "isCompleted",
+          "type": 1
+        },
+        {
+          "id": "5:5085230433486746897",
+          "name": "isSynced",
+          "type": 1
+        },
+        {
+          "id": "6:6477485638009478079",
+          "name": "priority",
+          "type": 9
+        },
+        {
+          "id": "7:2715879365778707394",
+          "name": "reviewNotes",
+          "type": 9
+        },
+        {
+          "id": "8:1381387171036348507",
+          "name": "updatedAt",
+          "type": 10
+        },
+        {
+          "id": "9:8879721476363796315",
+          "name": "updatedBy",
+          "type": 9
+        },
+        {
+          "id": "10:5165483318901163621",
+          "name": "casesId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "2:8255805578641686788",
+          "relationTarget": "Cases"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "4:5134303118009548481",
+      "lastPropertyId": "4:8321040850838098014",
+      "name": "TaskImage",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:5445897499272809250",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:8112497585805787825",
+          "name": "imageBytes",
+          "type": 23
+        },
+        {
+          "id": "3:213475992051900273",
+          "name": "createdAt",
+          "type": 10
+        },
+        {
+          "id": "4:8321040850838098014",
+          "name": "taskId",
+          "type": 11,
+          "flags": 520,
+          "indexId": "3:2410959994705650019",
+          "relationTarget": "Task"
+        }
+      ],
+      "relations": []
+    },
+    {
+      "id": "5:7015158832183501369",
+      "lastPropertyId": "3:879407809591907652",
+      "name": "User",
+      "flags": 2,
+      "properties": [
+        {
+          "id": "1:6662841039444687588",
+          "name": "id",
+          "type": 6,
+          "flags": 1
+        },
+        {
+          "id": "2:5080650290156541050",
+          "name": "email",
+          "type": 9
+        },
+        {
+          "id": "3:879407809591907652",
+          "name": "password",
+          "type": 9
+        }
+      ],
+      "relations": []
+    }
+  ],
+  "lastEntityId": "5:7015158832183501369",
+  "lastIndexId": "3:2410959994705650019",
+  "lastRelationId": "0:0",
+  "lastSequenceId": "0:0",
+  "modelVersion": 5,
+  "modelVersionParserMinimum": 5,
+  "retiredEntityUids": [],
+  "retiredIndexUids": [],
+  "retiredPropertyUids": [],
+  "retiredRelationUids": [],
+  "version": 1
+}
