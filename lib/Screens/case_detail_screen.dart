@@ -104,7 +104,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
       body: Column(
         children: [
           // Offline indicator
-          const OfflineIndicator(),
+          // const OfflineIndicator(),
           Expanded(
             child: Column(
               children: [
@@ -474,7 +474,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => showCustomDialog(context, widget.case_),
+        onPressed: () => showCustomDialog(context, widget.case_, _isOnline),
         backgroundColor: const Color(0xFF2196F3),
         child: const Icon(Icons.add, color: Colors.white),
       ),

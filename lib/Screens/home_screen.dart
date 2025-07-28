@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_app/services/export_service.dart';
 import 'case_list_tab.dart';
 import 'sites_list_screen.dart';
 import '../services/user_service.dart';
@@ -31,6 +32,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
     );
+  }
+
+  void _download(){
+    ExportService().listUnsyncedTasks();
+    print("hello");
   }
 
   @override
@@ -70,10 +76,23 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             onSelected: (value) {
               if (value == 'logout') {
                 _logout();
+              }else if (value == 'download'){
+                _download();
               }
             },
             icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'download',
+                child: Row(
+                  children: [
+                    Icon(Icons.download, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Download', style: TextStyle(color: Colors.blue)),
+                  ],
+                ),
+              ),
+
               const PopupMenuItem(
                 value: 'logout',
                 child: Row(

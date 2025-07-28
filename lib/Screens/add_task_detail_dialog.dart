@@ -8,19 +8,15 @@ import '../services/sync_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
 
-void showCustomDialog(BuildContext context, Cases case_) {
+void showCustomDialog(BuildContext context, Cases case_, bool isOnline) {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TextEditingController reviewNotesController = TextEditingController();
   bool isCompleted = false;
   String priority = "LOW";
   var levels = ["LOW", "MEDIUM", "HIGH"];
-  bool isOnline = true;
+  // bool isOnline = true;
 
-  // Check connectivity
-  Connectivity().checkConnectivity().then((result) {
-    isOnline = result != ConnectivityResult.none;
-  });
 
   showDialog(
     context: context,
@@ -139,6 +135,7 @@ void showCustomDialog(BuildContext context, Cases case_) {
                   );
 
                   try {
+                    print("isOnline: $isOnline");
                     task.cases.target = case_;
                     taskBox.put(task);
                     
@@ -155,6 +152,7 @@ void showCustomDialog(BuildContext context, Cases case_) {
                     
                     // Auto-sync if online
                     if (isOnline) {
+                      print('isonline: $isOnline');
                       _autoSyncTask(task);
                     }
                   } catch(e) {

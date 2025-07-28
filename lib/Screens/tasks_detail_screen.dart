@@ -264,7 +264,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ),
       body: Column(
         children: [
-          const OfflineIndicator(),
+          // const OfflineIndicator(),
           Expanded(
             child: StreamBuilder<Task?>(
               stream: getTaskStream(widget.task.id),
