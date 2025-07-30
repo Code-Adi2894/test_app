@@ -6,6 +6,9 @@ import 'package:provider/provider.dart';
 import 'package:test_app/Screens/login_screen.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:test_app/services/check_connectivity_service.dart';
+import 'package:test_app/services/sync_client_manager.dart';
+import 'package:test_app/services/sync_update_service.dart';
 import 'package:test_app/widgets/change_notifier.dart';
 import 'objectbox.dart';
 import 'services/user_service.dart';
@@ -50,53 +53,42 @@ Future<void> main() async {
 
   objectbox = await ObjectBox.create();
 
-  // Initialize connectivity service
-  await connectivityService.initialize();
+  // var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
+  // // var syncServerIp = "127.0.0.1"; for physcial device testing
+  // SyncClient syncClient = Sync.client(
+  //   objectbox.store,
+  //   'ws://$syncServerIp:9999',
+  //   SyncCredentials.none(),
+  // );
 
-  var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
-  // var syncServerIp = "127.0.0.1"; for physcial device testing
-  SyncClient syncClient = Sync.client(
-    objectbox.store,
-    'ws://$syncServerIp:9999',
-    SyncCredentials.none(),
-  );
 
-syncClient.connectionEvents.listen((event) {
-  final context = navigatorKey.currentContext;
-  if (context == null) return;
-
-  final store = Provider.of<AppStore>(context, listen: false);
-
-  switch (event) {
-      case SyncConnectionEvent.connected:
-        debugPrint('🔗 Connected to Sync Server');
-        // Optional: trigger sync or UI update
-        store.updateConnection(true);
-        break;
-      case SyncConnectionEvent.disconnected:
-        debugPrint('⚠️ Disconnected from Sync Server');
-        // Optional: show offline banner or retry logic
-        store.updateConnection(false);
-        break;
-    }
-    ;
-  });
-
-  try {
-    syncClient.start();
-    print("Sync client started");
-  } catch (e) {
-    print("Sync client error: $e");
-  }
+  // try {
+  //   syncClient.setRequestUpdatesMode(SyncRequestUpdatesMode.manual);
+  //   final syncService = SyncUpdateService(syncClient: syncClient);
+  //   syncClient.start();
+  //   print("Sync client started");
+  // } catch (e) {
+  //   print("Sync client error: $e");
+  // }
 
 
   // Debug: Print user information
   _debugUserInfo();
-
   printLocalPath();
+
+  // check connectivity status
+  final appStore = AppStore();
+  CheckConnectivityService().listenToConnectivity(appStore);
+
+  final syncManager = SyncClientManager();
+  await syncManager.initialize(true);
+
+  SyncUpdateService.init(manager: syncManager);
+
+
   runApp(
-      ChangeNotifierProvider(
-          create: (_) => AppStore(),
+      ChangeNotifierProvider<AppStore>.value(
+          value: appStore,
           child: MyApp(navigatorKey: navigatorKey),
   ));
 }

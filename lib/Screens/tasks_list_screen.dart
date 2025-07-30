@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:test_app/Screens/add_task_detail_dialog.dart';
 import '../Screens/tasks_detail_screen.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
+import '../widgets/change_notifier.dart';
 
 final taskBox = objectbox.store.box<Task>();
 
@@ -30,8 +32,6 @@ class _TasksListScreenState extends State<TasksListScreen> {
   bool _isOnline = true;
   late final Connectivity _connectivity;
   late StreamSubscription<List<ConnectivityResult>>  _connectivitySubscription;
-  // late StreamSubscription<ConnectivityResult> _connectivitySubscription;
-
 
   @override
   void initState() {
@@ -62,6 +62,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var connectionStatus = context.watch<AppStore>().isConnected;
     late Task selectedTask;
     return Scaffold(
         appBar: AppBar(title: Text("Tasks list for ${widget.case_.name}")),
@@ -97,7 +98,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
                   }
               )),
               ElevatedButton(
-                  onPressed: () => showCustomDialog(context, widget.case_, _isOnline),
+                  onPressed: () => showCustomDialog(context, widget.case_, connectionStatus),
                   child: Text("Add task")
               )
             ]

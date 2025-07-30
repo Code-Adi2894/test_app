@@ -3,26 +3,65 @@
 // store in the device
 // after storing launch notification
 
-import 'package:objectbox/objectbox.dart';
-import 'package:test_app/services/sync_service.dart';
-
 import '../entities.dart';
 import '../main.dart';
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
+
+import '../objectbox.g.dart';
+import 'media_permission_service.dart';
+
 
 class ExportService {
   // get task box
   final taskBox = objectbox.store.box<Task>();
   // get case box
   final caseBox = objectbox.store.box<Cases>();
-  final unsyncedTasks = SyncService().getPendingTasks();
-  final unsyncedCases = SyncService().getPendingCases();
 
-  void listUnsyncedTasks(){
-    final tasks = taskBox.getAll();
-    print("listing");
-    for(Task task in tasks){
-      print('Title: ${task.title}, description: ${task.description}, isSynced: ${task.isSynced}');
+  Future<void> exportUnsyncedTasks() async {
+    try{
+      final query = taskBox.query(Task_.isSynced.equals(false)).build();
+      final tasks = query.find();
+      query.close();
+
+      if (tasks.isEmpty) {
+        print('No unsynced tasks to export.');
+        return;
+      }
+
+      // Convert tasks to list of maps
+      final taskList = tasks.map((task) =>
+      {
+        'id': task.id,
+        'title': task.title,
+        'description': task.description,
+        'isCompleted': task.isCompleted,
+        'priority': task.priority,
+        'reviewNotes': task.reviewNotes,
+        'updatedBy': task.updatedBy,
+        'updatedAt': task.updatedAt.toIso8601String(),
+      }).toList();
+
+      final jsonString = jsonEncode(taskList);
+
+      // Request storage permission
+      final permissionsGranted = await MediaPermissionService().ensureMediaAccess();
+      if (!permissionsGranted) {
+        print('Storage permission denied');
+        return;
+      }
+
+      // Get device directory
+      final directory = await getApplicationDocumentsDirectory();
+      final filePath = '${directory.path}/unsynced_tasks_${DateTime
+          .now()
+          .millisecondsSinceEpoch}.json';
+      final file = File(filePath);
+      await file.writeAsString(jsonString);
+      print('✅ Exported ${tasks.length} unsynced tasks to $filePath');
+    }catch(e) {
+      print('❌ Export failed: $e');
     }
   }
-
 }

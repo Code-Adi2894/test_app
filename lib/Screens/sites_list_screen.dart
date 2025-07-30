@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
-import '../objectbox.g.dart';
 import '../services/site_service.dart';
 import 'add_site_dialog.dart';
 

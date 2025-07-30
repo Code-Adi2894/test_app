@@ -14,7 +14,6 @@ import '../services/sync_service.dart';
 import '../services/site_service.dart';
 import '../widgets/change_notifier.dart';
 import './case_detail_screen.dart';
-import '../widgets/offline_indicator.dart';
 import './add_case_dialog.dart';
 
 final caseBox = objectbox.store.box<Cases>();
@@ -22,7 +21,7 @@ Stream<List<Cases>> get caseStream =>
     caseBox.query().watch(triggerImmediately: true).map((q) => q.find());
 
 class CaseListScreen extends StatefulWidget {
-  const CaseListScreen({Key? key}) : super(key: key);
+  const CaseListScreen({super.key});
 
   @override
   _CaseListScreenState createState() => _CaseListScreenState();
