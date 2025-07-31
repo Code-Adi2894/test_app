@@ -459,7 +459,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => TaskDetailScreen(task: task),
+                                    builder: (context) => TaskDetailScreen(task: task, cases: widget.case_),
                                   ),
                                 );
                               },

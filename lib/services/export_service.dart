@@ -39,11 +39,15 @@ class ExportService {
         'isCompleted': task.isCompleted,
         'priority': task.priority,
         'reviewNotes': task.reviewNotes,
+        'isSynced':task.isSynced,
         'updatedBy': task.updatedBy,
         'updatedAt': task.updatedAt.toIso8601String(),
       }).toList();
 
       final jsonString = jsonEncode(taskList);
+      for(Task task in tasks){
+        print('taskId: ${task.id}, title: ${task.title}');
+      }
 
       // Request storage permission
       final permissionsGranted = await MediaPermissionService().ensureMediaAccess();

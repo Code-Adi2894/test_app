@@ -89,7 +89,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder:
-                              (context) => TaskDetailScreen(task: selectedTask)
+                              (context) => TaskDetailScreen(task: selectedTask, cases: widget.case_)
                             )
                           );
                         }
