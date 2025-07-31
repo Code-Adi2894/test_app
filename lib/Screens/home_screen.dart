@@ -37,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _download(){
-    ExportService().exportUnsyncedTasks();
+    ExportService().exportUnsyncedData();
   }
 
   @override

@@ -167,7 +167,6 @@ class SyncService {
       try{
         var unsyncedTasks = getPendingTasks();
         for (Task task in unsyncedTasks){
-          print("taskid: ${task.id}, isSynced: ${task.isSynced}");
           task.isSynced = true;
           taskBox.put(task);
         }

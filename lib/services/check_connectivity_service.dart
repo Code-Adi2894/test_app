@@ -1,13 +1,10 @@
 import 'dart:async';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:test_app/services/sync_service.dart';
 import 'package:test_app/widgets/change_notifier.dart';
 
 class CheckConnectivityService{
-  // get the connection status
-  // send the status to change_notifier
-  // var appStore = AppStore();
-  // appStore.updateConnection();
   static final CheckConnectivityService _instance = CheckConnectivityService._internal();
   factory CheckConnectivityService() => _instance;
 
@@ -22,6 +19,7 @@ class CheckConnectivityService{
 
       if (result.contains(ConnectivityResult.wifi) || result.contains(ConnectivityResult.mobile)) {
         appStore.updateConnection(true);
+        syncService.performSync();
         print("Wifi connected");
       } else {
         appStore.updateConnection(false);
