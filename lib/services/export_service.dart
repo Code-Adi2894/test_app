@@ -21,7 +21,6 @@ class ExportService {
       query.close();
 
       if (tasks.isEmpty) {
-        print('No unsynced tasks to export.');
         return [];
       }
 

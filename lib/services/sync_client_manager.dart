@@ -1,11 +1,8 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:provider/provider.dart';
 
 import '../main.dart';
-import '../objectbox.dart';
 import '../objectbox.g.dart';
-import '../widgets/change_notifier.dart';
 
 
 class SyncClientManager {
@@ -33,7 +30,7 @@ class SyncClientManager {
     );
 
     _syncClient?.setRequestUpdatesMode(toggleStatus ? SyncRequestUpdatesMode.auto : SyncRequestUpdatesMode.manual);
-    print("Sync client started with request update mode: ${SyncRequestUpdatesMode}");
+    print("Sync client started with request update mode: $SyncRequestUpdatesMode");
 
     try {
       _syncClient!.start();
