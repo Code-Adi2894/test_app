@@ -43,6 +43,22 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
   bool _isSyncing = false;
   late final Connectivity _connectivity;
   File? imageFile;
+  
+  // New state variables for editing management
+  bool _isEditing = false;
+  Map<String, dynamic> _originalValues = {};
+  Map<String, bool> _fieldModified = {
+    'title': false,
+    'description': false,
+    'reviewNotes': false,
+    'isCompleted': false,
+    'priority': false,
+  };
+  Task? _lastProcessedTask;
+  bool _isProcessingChanges = false;
+  bool _hasShownUpdateNotification = false;
+  DateTime? _lastProcessTime;
+
 
   @override
   void initState(){
@@ -53,9 +69,762 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     isCompleted = widget.task.isCompleted;
     priority = widget.task.priority;
     
+    // Store original values for conflict resolution
+    _storeOriginalValues();
+    
     // Initialize connectivity
     _connectivity = Connectivity();
     _checkConnectivity();
+    
+    // Add listeners to track field modifications
+    _addFieldListeners();
+  }
+
+  void _storeOriginalValues() {
+    _originalValues = {
+      'title': widget.task.title,
+      'description': widget.task.description,
+      'reviewNotes': widget.task.reviewNotes,
+      'isCompleted': widget.task.isCompleted,
+      'priority': widget.task.priority,
+    };
+  }
+
+  void _addFieldListeners() {
+    titleController.addListener(() {
+      if (!_fieldModified['title']! && titleController.text != _originalValues['title']) {
+        setState(() {
+          _fieldModified['title'] = true;
+          _isEditing = true;
+        });
+        _hasShownUpdateNotification = false; // Reset notification when user starts editing
+      }
+    });
+
+    descriptionController.addListener(() {
+      if (!_fieldModified['description']! && descriptionController.text != _originalValues['description']) {
+        setState(() {
+          _fieldModified['description'] = true;
+          _isEditing = true;
+        });
+        _hasShownUpdateNotification = false; // Reset notification when user starts editing
+      }
+    });
+
+    reviewNotesController.addListener(() {
+      if (!_fieldModified['reviewNotes']! && reviewNotesController.text != _originalValues['reviewNotes']) {
+        setState(() {
+          _fieldModified['reviewNotes'] = true;
+          _isEditing = true;
+        });
+        _hasShownUpdateNotification = false; // Reset notification when user starts editing
+      }
+    });
+  }
+
+  void _markFieldAsModified(String fieldName) {
+    if (!_fieldModified[fieldName]!) {
+      setState(() {
+        _fieldModified[fieldName] = true;
+        _isEditing = true;
+      });
+      _hasShownUpdateNotification = false; // Reset notification when user starts editing
+    }
+  }
+
+  void _resetEditingState() {
+    setState(() {
+      _isEditing = false;
+      _fieldModified = {
+        'title': false,
+        'description': false,
+        'reviewNotes': false,
+        'isCompleted': false,
+        'priority': false,
+      };
+    });
+    _storeOriginalValues();
+    _hasShownUpdateNotification = false; // Reset notification flag
+  }
+
+  // Smart conflict resolution method
+  void _handleIncomingChanges(Task incomingTask) {
+    try {
+      if (!_isEditing) {
+        // If not editing, accept all changes
+        _updateControllersFromTask(incomingTask);
+        return;
+      }
+
+      print('\n🔄 HANDLING INCOMING CHANGES WHILE EDITING');
+      _logTaskComparison(widget.task, incomingTask);
+
+      // Check if there are any actual changes from another user
+      bool hasChanges = incomingTask.title != widget.task.title ||
+                       incomingTask.description != widget.task.description ||
+                       incomingTask.reviewNotes != widget.task.reviewNotes ||
+                       incomingTask.isCompleted != widget.task.isCompleted ||
+                       incomingTask.priority != widget.task.priority ||
+                       incomingTask.images.length != widget.task.images.length;
+
+      // Show notification if there are changes and we haven't shown one yet
+      if (hasChanges && !_hasShownUpdateNotification) {
+        _showUpdateNotification(incomingTask);
+        _hasShownUpdateNotification = true;
+      }
+
+    // Only update fields that haven't been modified by the user
+    if (!_fieldModified['title']! && incomingTask.title != titleController.text) {
+      print('✅ Updating title from "${titleController.text}" to "${incomingTask.title}"');
+      titleController.text = incomingTask.title;
+    }
+
+    if (!_fieldModified['description']! && incomingTask.description != descriptionController.text) {
+      print('✅ Updating description from "${descriptionController.text}" to "${incomingTask.description}"');
+      descriptionController.text = incomingTask.description;
+    }
+
+    if (!_fieldModified['reviewNotes']! && incomingTask.reviewNotes != reviewNotesController.text) {
+      print('✅ Updating review notes from "${reviewNotesController.text}" to "${incomingTask.reviewNotes}"');
+      reviewNotesController.text = incomingTask.reviewNotes;
+    }
+
+    // Schedule state updates for after the build is complete
+    bool needsStateUpdate = false;
+    bool newIsCompleted = isCompleted;
+    String newPriority = priority;
+
+    if (!_fieldModified['isCompleted']! && incomingTask.isCompleted != isCompleted) {
+      print('✅ Updating isCompleted from $isCompleted to ${incomingTask.isCompleted}');
+      newIsCompleted = incomingTask.isCompleted;
+      needsStateUpdate = true;
+    }
+
+    if (!_fieldModified['priority']! && incomingTask.priority != priority) {
+      print('✅ Updating priority from "$priority" to "${incomingTask.priority}"');
+      newPriority = incomingTask.priority;
+      needsStateUpdate = true;
+    }
+
+    // Update other task properties that don't affect the form
+    widget.task.updatedAt = incomingTask.updatedAt;
+    widget.task.updatedBy = incomingTask.updatedBy;
+    widget.task.isSynced = incomingTask.isSynced;
+    
+    // Update images if they've changed
+    if (incomingTask.images.length != widget.task.images.length) {
+      widget.task.images.clear();
+      widget.task.images.addAll(incomingTask.images);
+    }
+
+    // Schedule state update after build is complete
+    if (needsStateUpdate) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          setState(() {
+            isCompleted = newIsCompleted;
+            priority = newPriority;
+          });
+        }
+      });
+    }
+    } catch (e) {
+      print('Error in _handleIncomingChanges: $e');
+      // Don't throw the error, just log it to prevent UI errors
+    }
+  }
+
+  void _updateControllersFromTask(Task task) {
+    titleController.text = task.title;
+    descriptionController.text = task.description;
+    reviewNotesController.text = task.reviewNotes;
+    
+    // Schedule state update after build is complete
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        setState(() {
+          isCompleted = task.isCompleted;
+          priority = task.priority;
+        });
+      }
+    });
+  }
+
+  void _showUpdateNotification(Task updatedTask) {
+    try {
+      // Count the number of changes
+      int changeCount = 0;
+      if (updatedTask.title != widget.task.title) changeCount++;
+      if (updatedTask.description != widget.task.description) changeCount++;
+      if (updatedTask.reviewNotes != widget.task.reviewNotes) changeCount++;
+      if (updatedTask.isCompleted != widget.task.isCompleted) changeCount++;
+      if (updatedTask.priority != widget.task.priority) changeCount++;
+      if (updatedTask.images.length != widget.task.images.length) changeCount++;
+
+      // Show a toast notification about the update
+      ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(
+              Icons.sync_problem,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Conflict Detected',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    '${updatedTask.updatedBy} made $changeCount change${changeCount == 1 ? '' : 's'} to this task. Review and resolve conflicts.',
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFFFF9800),
+        duration: const Duration(seconds: 8),
+        behavior: SnackBarBehavior.floating,
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        action: SnackBarAction(
+          label: 'Review Changes',
+          textColor: Colors.white,
+          onPressed: () {
+            _showConflictResolutionDialog(updatedTask);
+          },
+        ),
+      ),
+    );
+    } catch (e) {
+      print('Error showing update notification: $e');
+      // Don't throw the error, just log it to prevent UI errors
+    }
+  }
+
+  void _showConflictResolutionDialog(Task updatedTask) {
+    try {
+      // Create a map to track which changes the user wants to accept
+      Map<String, bool> acceptedChanges = {};
+      
+      // Initialize with all changes as accepted by default
+      if (updatedTask.title != widget.task.title) acceptedChanges['title'] = true;
+      if (updatedTask.description != widget.task.description) acceptedChanges['description'] = true;
+      if (updatedTask.reviewNotes != widget.task.reviewNotes) acceptedChanges['reviewNotes'] = true;
+      if (updatedTask.isCompleted != widget.task.isCompleted) acceptedChanges['isCompleted'] = true;
+      if (updatedTask.priority != widget.task.priority) acceptedChanges['priority'] = true;
+      if (updatedTask.images.length != widget.task.images.length) acceptedChanges['images'] = true;
+
+      // Count total changes
+      int totalChanges = acceptedChanges.length;
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  const Icon(Icons.merge_type, color: Color(0xFF2196F3)),
+                  const SizedBox(width: 8),
+                  const Text('Resolve Conflicts'),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // User info section
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFE3F2FD),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: const Color(0xFF2196F3), width: 1),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.person, color: Color(0xFF2196F3), size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Updated by: ${updatedTask.updatedBy}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF2196F3),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time, color: Color(0xFF2196F3), size: 16),
+                              const SizedBox(width: 6),
+                              Text(
+                                'Time: ${updatedTask.updatedAt.toString().substring(0, 19)}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Color(0xFF1976D2),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    // Summary section
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFFF8E1),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: const Color(0xFFFFC107), width: 1),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline, color: Color(0xFFFFC107), size: 16),
+                          const SizedBox(width: 6),
+                          Text(
+                            '$totalChanges field${totalChanges == 1 ? '' : 's'} changed by ${updatedTask.updatedBy}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFE65100),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    
+                    const Text(
+                      'Select which changes to accept:',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildConflictResolutionList(updatedTask, acceptedChanges, setDialogState),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    _applySelectedChanges(updatedTask, acceptedChanges);
+                  },
+                  child: const Text('Apply Selected'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+    } catch (e) {
+      print('Error showing conflict resolution dialog: $e');
+      // Show a simple error message to the user
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error showing conflict dialog: $e'),
+          backgroundColor: const Color(0xFFDC3545),
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
+  }
+
+  Widget _buildConflictResolutionList(Task updatedTask, Map<String, bool> acceptedChanges, StateSetter setDialogState) {
+    List<Widget> changes = [];
+    
+    if (updatedTask.title != widget.task.title) {
+      changes.add(_buildConflictResolutionItem(
+        'Title', 
+        widget.task.title, 
+        updatedTask.title, 
+        acceptedChanges['title'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['title'] = value;
+          });
+        },
+        _getChangeDescription('title', widget.task.title, updatedTask.title),
+      ));
+    }
+    
+    if (updatedTask.description != widget.task.description) {
+      changes.add(_buildConflictResolutionItem(
+        'Description', 
+        widget.task.description, 
+        updatedTask.description, 
+        acceptedChanges['description'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['description'] = value;
+          });
+        },
+        _getChangeDescription('description', widget.task.description, updatedTask.description),
+      ));
+    }
+    
+    if (updatedTask.reviewNotes != widget.task.reviewNotes) {
+      changes.add(_buildConflictResolutionItem(
+        'Review Notes', 
+        widget.task.reviewNotes, 
+        updatedTask.reviewNotes, 
+        acceptedChanges['reviewNotes'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['reviewNotes'] = value;
+          });
+        },
+        _getChangeDescription('review notes', widget.task.reviewNotes, updatedTask.reviewNotes),
+      ));
+    }
+    
+    if (updatedTask.isCompleted != widget.task.isCompleted) {
+      changes.add(_buildConflictResolutionItem(
+        'Completed', 
+        widget.task.isCompleted.toString(), 
+        updatedTask.isCompleted.toString(), 
+        acceptedChanges['isCompleted'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['isCompleted'] = value;
+          });
+        },
+        _getChangeDescription('completion status', widget.task.isCompleted.toString(), updatedTask.isCompleted.toString()),
+      ));
+    }
+    
+    if (updatedTask.priority != widget.task.priority) {
+      changes.add(_buildConflictResolutionItem(
+        'Priority', 
+        widget.task.priority, 
+        updatedTask.priority, 
+        acceptedChanges['priority'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['priority'] = value;
+          });
+        },
+        _getChangeDescription('priority', widget.task.priority, updatedTask.priority),
+      ));
+    }
+    
+    if (updatedTask.images.length != widget.task.images.length) {
+      changes.add(_buildConflictResolutionItem(
+        'Images', 
+        '${widget.task.images.length} images', 
+        '${updatedTask.images.length} images', 
+        acceptedChanges['images'] ?? false,
+        (value) {
+          setDialogState(() {
+            acceptedChanges['images'] = value;
+          });
+        },
+        _getChangeDescription('images', '${widget.task.images.length} images', '${updatedTask.images.length} images'),
+      ));
+    }
+    
+    if (changes.isEmpty) {
+      changes.add(const Text(
+        'No conflicts detected',
+        style: TextStyle(
+          fontStyle: FontStyle.italic,
+          color: Color(0xFF6C757D),
+        ),
+      ));
+    }
+    
+    return Column(
+      children: changes,
+    );
+  }
+
+  String _getChangeDescription(String fieldName, String oldValue, String newValue) {
+    if (oldValue.isEmpty && newValue.isNotEmpty) {
+      return 'Added $fieldName: "$newValue"';
+    } else if (oldValue.isNotEmpty && newValue.isEmpty) {
+      return 'Removed $fieldName: "$oldValue"';
+    } else {
+      return 'Changed $fieldName from "$oldValue" to "$newValue"';
+    }
+  }
+
+  Widget _buildConflictResolutionItem(String fieldName, String oldValue, String newValue, bool isAccepted, Function(bool) onChanged, String changeDescription) {
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isAccepted ? const Color(0xFFE8F5E8) : const Color(0xFFFFF3CD),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: isAccepted ? const Color(0xFF28A745) : const Color(0xFFFFC107),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Checkbox(
+                value: isAccepted,
+                onChanged: (value) => onChanged(value ?? false),
+                activeColor: const Color(0xFF28A745),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      fieldName,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    Text(
+                      changeDescription,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF6C757D),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (isAccepted) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFD4EDDA),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFF28A745), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.check_circle, color: Color(0xFF28A745), size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Will be updated to:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF28A745),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    newValue.isEmpty ? '(empty)' : newValue,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF155724),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ] else ...[
+            // Show detailed diff view
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8F9FA),
+                borderRadius: BorderRadius.circular(4),
+                border: Border.all(color: const Color(0xFF6C757D), width: 1),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(Icons.remove_circle, color: Color(0xFFDC3545), size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'Current value:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFDC3545),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFEBEE),
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: const Color(0xFFDC3545), width: 0.5),
+                    ),
+                    child: Text(
+                      oldValue.isEmpty ? '(empty)' : oldValue,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFFC62828),
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      const Icon(Icons.add_circle, color: Color(0xFF28A745), size: 16),
+                      const SizedBox(width: 4),
+                      const Text(
+                        'New value:',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF28A745),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F5E8),
+                      borderRadius: BorderRadius.circular(3),
+                      border: Border.all(color: const Color(0xFF28A745), width: 0.5),
+                    ),
+                    child: Text(
+                      newValue.isEmpty ? '(empty)' : newValue,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xFF2E7D32),
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  void _applySelectedChanges(Task updatedTask, Map<String, bool> acceptedChanges) {
+    print('\n🔄 APPLYING SELECTED CHANGES');
+    
+    // Apply only the selected changes
+    if (acceptedChanges['title'] == true && !_fieldModified['title']!) {
+      print('✅ Applying title change: "${widget.task.title}" → "${updatedTask.title}"');
+      titleController.text = updatedTask.title;
+    }
+    
+    if (acceptedChanges['description'] == true && !_fieldModified['description']!) {
+      print('✅ Applying description change: "${widget.task.description}" → "${updatedTask.description}"');
+      descriptionController.text = updatedTask.description;
+    }
+    
+    if (acceptedChanges['reviewNotes'] == true && !_fieldModified['reviewNotes']!) {
+      print('✅ Applying review notes change: "${widget.task.reviewNotes}" → "${updatedTask.reviewNotes}"');
+      reviewNotesController.text = updatedTask.reviewNotes;
+    }
+    
+    if (acceptedChanges['isCompleted'] == true && !_fieldModified['isCompleted']!) {
+      print('✅ Applying isCompleted change: ${widget.task.isCompleted} → ${updatedTask.isCompleted}');
+      setState(() {
+        isCompleted = updatedTask.isCompleted;
+      });
+    }
+    
+    if (acceptedChanges['priority'] == true && !_fieldModified['priority']!) {
+      print('✅ Applying priority change: "${widget.task.priority}" → "${updatedTask.priority}"');
+      setState(() {
+        priority = updatedTask.priority;
+      });
+    }
+    
+    if (acceptedChanges['images'] == true) {
+      print('✅ Applying images change: ${widget.task.images.length} → ${updatedTask.images.length} images');
+      widget.task.images.clear();
+      widget.task.images.addAll(updatedTask.images);
+    }
+    
+    // Update metadata
+    widget.task.updatedAt = updatedTask.updatedAt;
+    widget.task.updatedBy = updatedTask.updatedBy;
+    widget.task.isSynced = updatedTask.isSynced;
+    
+    // Show confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Applied ${acceptedChanges.values.where((v) => v).length} changes'),
+        backgroundColor: const Color(0xFF28A745),
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+
+
+  void _handleBackPress() {
+    if (_isEditing) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Unsaved Changes'),
+            content: const Text('You have unsaved changes. Are you sure you want to leave?'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Leave'),
+              ),
+            ],
+          );
+        },
+      );
+    } else {
+      Navigator.of(context).pop();
+    }
   }
 
   Future<void> _checkConnectivity() async {
@@ -90,6 +859,11 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     try{
       widget.task.cases.target = widget.cases;
       taskBox.put(widget.task);
+      
+      // Reset editing state after successful save
+      _resetEditingState();
+      _lastProcessedTask = null; // Reset to allow processing new changes
+      _hasShownUpdateNotification = false; // Reset notification flag
       
       // Log the task after saving
       print('\n✅ SAVE OPERATION COMPLETED');
@@ -151,11 +925,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     return tasks.isNotEmpty ? tasks.first : widget.task;
   }
 
-  // Helper method to check for conflicts
-  bool _hasConflicts(Task local, Task remote) {
-    // Implementation of _hasConflicts method
-    return false; // Placeholder return, actual implementation needed
-  }
+
 
   // Helper method to log task properties
   void _logTaskProperties(String taskName, Task task) {
@@ -224,21 +994,43 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => _handleBackPress(),
         ),
         title: StreamBuilder<Task?>(
           stream: getTaskStream(widget.task.id),
           builder: (context, snapshot) {
             final task = snapshot.data ?? widget.task;
-            return Text(
-              task.title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 20,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    task.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (_isEditing)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withOpacity(0.8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'Editing',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+              ],
             );
           },
         ),
@@ -302,25 +1094,41 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
                 final task = snapshot.data ?? widget.task;
                 
-                // Log local and remote tasks for debugging
-                _logTaskProperties('LOCAL (widget.task)', widget.task);
-                _logTaskProperties('REMOTE (from stream)', task);
+                // Only process changes if we're not already processing and if this is a new task
+                // Add debounce to prevent rapid processing
+                final now = DateTime.now();
+                final shouldProcess = !_isProcessingChanges && 
+                                    task != null && 
+                                    (_lastProcessedTask == null || _lastProcessedTask!.updatedAt != task.updatedAt) &&
+                                    (_lastProcessTime == null || now.difference(_lastProcessTime!).inMilliseconds > 500);
                 
-                // Update controllers with latest data
-                if (task.title != titleController.text) {
-                  titleController.text = task.title;
-                }
-                if (task.description != descriptionController.text) {
-                  descriptionController.text = task.description;
-                }
-                if (task.reviewNotes != reviewNotesController.text) {
-                  reviewNotesController.text = task.reviewNotes;
-                }
-                if (task.isCompleted != isCompleted) {
-                  isCompleted = task.isCompleted;
-                }
-                if (task.priority != priority) {
-                  priority = task.priority;
+                if (shouldProcess) {
+                  _isProcessingChanges = true;
+                  _lastProcessTime = now;
+                  
+                  try {
+                    // Log local and remote tasks for debugging
+                    _logTaskProperties('LOCAL (widget.task)', widget.task);
+                    _logTaskProperties('REMOTE (from stream)', task);
+                    
+                    // Use smart conflict resolution instead of always updating
+                    _handleIncomingChanges(task);
+                    
+                    // Mark this task as processed
+                    _lastProcessedTask = task;
+                  } catch (e) {
+                    print('Error processing incoming changes: $e');
+                    // Don't show error to user, just log it
+                  } finally {
+                    // Reset processing flag after a short delay
+                    Future.delayed(const Duration(milliseconds: 100), () {
+                      if (mounted) {
+                        setState(() {
+                          _isProcessingChanges = false;
+                        });
+                      }
+                    });
+                  }
                 }
 
                 return SingleChildScrollView(
@@ -574,16 +1382,28 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                               
                               Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
+                                  color: _fieldModified['title']! 
+                                    ? const Color(0xFFFFF3CD) 
+                                    : const Color(0xFFF8F9FA),
                                   borderRadius: BorderRadius.circular(12),
+                                  border: _fieldModified['title']! 
+                                    ? Border.all(color: Colors.orange, width: 1)
+                                    : null,
                                 ),
                                 child: TextField(
                                   controller: titleController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: 'Title',
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                    labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    labelStyle: TextStyle(
+                                      color: _fieldModified['title']! 
+                                        ? Colors.orange 
+                                        : const Color(0xFF6C757D)
+                                    ),
+                                    suffixIcon: _fieldModified['title']! 
+                                      ? const Icon(Icons.edit, color: Colors.orange, size: 16)
+                                      : null,
                                   ),
                                 ),
                               ),
@@ -591,17 +1411,29 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
                               Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
+                                  color: _fieldModified['description']! 
+                                    ? const Color(0xFFFFF3CD) 
+                                    : const Color(0xFFF8F9FA),
                                   borderRadius: BorderRadius.circular(12),
+                                  border: _fieldModified['description']! 
+                                    ? Border.all(color: Colors.orange, width: 1)
+                                    : null,
                                 ),
                                 child: TextField(
                                   controller: descriptionController,
                                   maxLines: 3,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: 'Description',
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                    labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    labelStyle: TextStyle(
+                                      color: _fieldModified['description']! 
+                                        ? Colors.orange 
+                                        : const Color(0xFF6C757D)
+                                    ),
+                                    suffixIcon: _fieldModified['description']! 
+                                      ? const Icon(Icons.edit, color: Colors.orange, size: 16)
+                                      : null,
                                   ),
                                 ),
                               ),
@@ -609,68 +1441,129 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
                               Container(
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
+                                  color: _fieldModified['reviewNotes']! 
+                                    ? const Color(0xFFFFF3CD) 
+                                    : const Color(0xFFF8F9FA),
                                   borderRadius: BorderRadius.circular(12),
+                                  border: _fieldModified['reviewNotes']! 
+                                    ? Border.all(color: Colors.orange, width: 1)
+                                    : null,
                                 ),
                                 child: TextField(
                                   controller: reviewNotesController,
                                   maxLines: 4,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: 'Review Notes',
                                     border: InputBorder.none,
-                                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                                    labelStyle: TextStyle(color: Color(0xFF6C757D)),
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                                    labelStyle: TextStyle(
+                                      color: _fieldModified['reviewNotes']! 
+                                        ? Colors.orange 
+                                        : const Color(0xFF6C757D)
+                                    ),
                                     hintText: 'Add review notes, comments, or observations...',
-                                    hintStyle: TextStyle(color: Color(0xFFADB5BD)),
+                                    hintStyle: const TextStyle(color: Color(0xFFADB5BD)),
+                                    suffixIcon: _fieldModified['reviewNotes']! 
+                                      ? const Icon(Icons.edit, color: Colors.orange, size: 16)
+                                      : null,
                                   ),
                                 ),
                               ),
                               const SizedBox(height: 20),
 
-                              Row(
-                                children: [
-                                  Checkbox(
-                                    value: isCompleted,
-                                    onChanged: (bool? value){
-                                      setState((){
-                                        isCompleted = value ?? false;
-                                      });
-                                    },
-                                    activeColor: const Color(0xFF28A745),
-                                  ),
-                                  const Text(
-                                    "Mark as completed",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Color(0xFF495057),
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: _fieldModified['isCompleted']! 
+                                    ? const Color(0xFFFFF3CD) 
+                                    : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: _fieldModified['isCompleted']! 
+                                    ? Border.all(color: Colors.orange, width: 1)
+                                    : null,
+                                ),
+                                padding: _fieldModified['isCompleted']! 
+                                  ? const EdgeInsets.all(8)
+                                  : EdgeInsets.zero,
+                                child: Row(
+                                  children: [
+                                    Checkbox(
+                                      value: isCompleted,
+                                      onChanged: (bool? value){
+                                        setState((){
+                                          isCompleted = value ?? false;
+                                        });
+                                        _markFieldAsModified('isCompleted');
+                                      },
+                                      activeColor: const Color(0xFF28A745),
                                     ),
-                                  ),
-                                ],
+                                    Expanded(
+                                      child: Row(
+                                        children: [
+                                          Text(
+                                            "Mark as completed",
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              color: _fieldModified['isCompleted']! 
+                                                ? Colors.orange 
+                                                : const Color(0xFF495057),
+                                            ),
+                                          ),
+                                          if (_fieldModified['isCompleted']!)
+                                            const Padding(
+                                              padding: EdgeInsets.only(left: 8),
+                                              child: Icon(Icons.edit, color: Colors.orange, size: 16),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               const SizedBox(height: 16),
 
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFFF8F9FA),
+                                  color: _fieldModified['priority']! 
+                                    ? const Color(0xFFFFF3CD) 
+                                    : const Color(0xFFF8F9FA),
                                   borderRadius: BorderRadius.circular(12),
+                                  border: _fieldModified['priority']! 
+                                    ? Border.all(color: Colors.orange, width: 1)
+                                    : null,
                                 ),
-                                child: DropdownButton<String>(
-                                  value: priority,
-                                  isExpanded: true,
-                                  underline: Container(),
-                                  icon: const Icon(Icons.keyboard_arrow_down, color: Color(0xFF6C757D)),
-                                  items: levels.map((String level){
-                                    return DropdownMenuItem<String>(
-                                      value: level,
-                                      child: Text(level),
-                                    );
-                                  }).toList(),
-                                  onChanged: (String? newValue){
-                                    setState((){
-                                      priority = newValue!;
-                                    });
-                                  },
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: DropdownButton<String>(
+                                          value: priority,
+                                          isExpanded: true,
+                                          underline: Container(),
+                                          icon: Icon(
+                                            Icons.keyboard_arrow_down, 
+                                            color: _fieldModified['priority']! 
+                                              ? Colors.orange 
+                                              : const Color(0xFF6C757D)
+                                          ),
+                                          items: levels.map((String level){
+                                            return DropdownMenuItem<String>(
+                                              value: level,
+                                              child: Text(level),
+                                            );
+                                          }).toList(),
+                                          onChanged: (String? newValue){
+                                            setState((){
+                                              priority = newValue!;
+                                            });
+                                            _markFieldAsModified('priority');
+                                          },
+                                        ),
+                                      ),
+                                      if (_fieldModified['priority']!)
+                                        const Icon(Icons.edit, color: Colors.orange, size: 16),
+                                    ],
+                                  ),
                                 ),
                               ),
                               const SizedBox(height: 20),
