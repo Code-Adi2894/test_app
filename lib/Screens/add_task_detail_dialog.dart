@@ -3,24 +3,17 @@ import 'package:flutter/material.dart';
 import '../entities.dart';
 import 'package:test_app/main.dart';
 import '../services/user_service.dart';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/sync_service.dart';
 
 final taskBox = objectbox.store.box<Task>();
 
-void showCustomDialog(BuildContext context, Cases case_) {
+void showCustomDialog(BuildContext context, Cases case_, bool connectionStatus) {
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TextEditingController reviewNotesController = TextEditingController();
   bool isCompleted = false;
   String priority = "LOW";
   var levels = ["LOW", "MEDIUM", "HIGH"];
-  bool isOnline = true;
-
-  // Check connectivity
-  Connectivity().checkConnectivity().then((result) {
-    isOnline = result != ConnectivityResult.none;
-  });
 
   showDialog(
     context: context,
@@ -154,7 +147,7 @@ void showCustomDialog(BuildContext context, Cases case_) {
                     );
                     
                     // Auto-sync if online
-                    if (isOnline) {
+                    if (connectionStatus == true) {
                       _autoSyncTask(task);
                     }
                   } catch(e) {
@@ -186,7 +179,7 @@ void _autoSyncTask(Task task) async {
     final success = await syncService.syncTask(task);
     if (success) {
       // Note: We can't show SnackBar here as the context is no longer available
-      print('Task "${task.title}" auto-synced!');
+      print('Task "${task.title}" Auto-synced!');
     } else {
       print('Auto-sync failed for task ${task.title}');
     }

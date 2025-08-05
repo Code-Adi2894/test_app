@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../entities.dart';
 import '../services/site_service.dart';
 import '../main.dart';
-import '../objectbox.g.dart';
 
 class AddCaseDialog extends StatefulWidget {
   final Function(Cases) onCaseAdded;

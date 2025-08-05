@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:provider/provider.dart';
 import 'package:test_app/Screens/login_screen.dart';
+import 'package:test_app/widgets/connectivity_indicator.dart';
 import 'package:test_app/widgets/site_filter_dropdown.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
@@ -10,8 +12,8 @@ import '../objectbox.g.dart';
 import '../services/user_service.dart';
 import '../services/sync_service.dart';
 import '../services/site_service.dart';
+import '../widgets/change_notifier.dart';
 import './case_detail_screen.dart';
-import '../widgets/offline_indicator.dart';
 import './add_case_dialog.dart';
 
 final caseBox = objectbox.store.box<Cases>();
@@ -19,7 +21,7 @@ Stream<List<Cases>> get caseStream =>
     caseBox.query().watch(triggerImmediately: true).map((q) => q.find());
 
 class CaseListScreen extends StatefulWidget {
-  const CaseListScreen({Key? key}) : super(key: key);
+  const CaseListScreen({super.key});
 
   @override
   _CaseListScreenState createState() => _CaseListScreenState();
@@ -32,6 +34,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
   bool _isAutoSyncing = false;
   late final Connectivity _connectivity;
   late final Stream<List<ConnectivityResult>> _connectivityStream;
+
 
   @override
   void initState() {
@@ -412,6 +415,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var connectionStatus = context.watch<AppStore>().isConnected;
     return Scaffold(
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.transparent,
@@ -477,7 +481,8 @@ class _CaseListScreenState extends State<CaseListScreen> {
               selectedSite: _selectedSite,
               onSiteChanged: (v) => setState(() => _selectedSite = v),
             ),
-            const OfflineIndicator(),
+            // const OfflineIndicator(),
+            ConnectivityIndicator(connectivityStatus: connectionStatus),
             Expanded(
               child: Container(
                 decoration: const BoxDecoration(

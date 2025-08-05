@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../objectbox.g.dart';
 import '../entities.dart';
 import '../main.dart';
 import '../services/user_service.dart';
-import '../widgets/offline_indicator.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/sync_service.dart';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 
+import '../widgets/change_notifier.dart';
 
 final taskBox = objectbox.store.box<Task>();
 final taskImageBox = objectbox.store.box<TaskImage>();
@@ -24,7 +25,8 @@ Stream<Task?> getTaskStream(int taskId) {
 
 class TaskDetailScreen extends StatefulWidget {
   final Task task;
-  const TaskDetailScreen({super.key, required this.task});
+  final Cases cases;
+  const TaskDetailScreen({super.key, required this.task, required this.cases});
 
   @override
   State<TaskDetailScreen> createState() => _TaskDetailScreenState();
@@ -840,7 +842,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     super.dispose();
   }
 
-  void _saveChanges() {
+  void _saveChanges(connectionStatus) {
     // Log the task before saving
     print('\n💾 SAVE OPERATION STARTED');
     _logTaskProperties('TASK BEFORE SAVE', widget.task);
@@ -855,6 +857,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
     widget.task.isSynced = false;
 
     try{
+      widget.task.cases.target = widget.cases;
       taskBox.put(widget.task);
       
       // Reset editing state after successful save
@@ -867,7 +870,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       _logTaskProperties('TASK AFTER SAVE', widget.task);
       
       // Auto-sync if online
-      if (_isOnline) {
+      if (connectionStatus) {
         _syncTask();
       }
       
@@ -983,6 +986,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var connectionStatus = context.watch<AppStore>().isConnected;
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -1047,7 +1051,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
               tooltip: 'Sync Task',
             ),
           IconButton(
-            onPressed: _saveChanges,
+            onPressed: () => _saveChanges(connectionStatus),
             icon: const Icon(Icons.save, color: Colors.white),
             tooltip: 'Save Changes',
           ),
@@ -1056,7 +1060,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
       ),
       body: Column(
         children: [
-          const OfflineIndicator(),
+          // const OfflineIndicator(),
           Expanded(
             child: StreamBuilder<Task?>(
               stream: getTaskStream(widget.task.id),

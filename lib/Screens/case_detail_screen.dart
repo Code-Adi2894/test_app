@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
-import '../services/user_service.dart';
 import '../services/sync_service.dart';
-import '../widgets/offline_indicator.dart';
-import '../widgets/user_info_widget.dart';
+import '../widgets/change_notifier.dart';
+import '../widgets/connectivity_indicator.dart';
 import './tasks_detail_screen.dart';
 import './add_task_detail_dialog.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -71,6 +71,8 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var connectionStatus = context.watch<AppStore>().isConnected;
+    print("connection status: $connectionStatus");
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
@@ -92,7 +94,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         ),
         actions: [
           // Sync case button - only show when online
-          if (_isOnline)
+          if (connectionStatus)
             IconButton(
               onPressed: () => _syncCase(),
               icon: const Icon(Icons.sync, color: Colors.white),
@@ -104,7 +106,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
       body: Column(
         children: [
           // Offline indicator
-          const OfflineIndicator(),
+          ConnectivityIndicator(connectivityStatus: connectionStatus),
           Expanded(
             child: Column(
               children: [
@@ -402,7 +404,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                       ),
                                       const Spacer(),
                                       // Task sync button - only show when online
-                                      if (_isOnline)
+                                      if (connectionStatus)
                                         IconButton(
                                           onPressed: () => _syncTask(task),
                                           icon: const Icon(
@@ -457,7 +459,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (context) => TaskDetailScreen(task: task),
+                                    builder: (context) => TaskDetailScreen(task: task, cases: widget.case_),
                                   ),
                                 );
                               },
@@ -474,7 +476,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => showCustomDialog(context, widget.case_),
+        onPressed: () => showCustomDialog(context, widget.case_, connectionStatus),
         backgroundColor: const Color(0xFF2196F3),
         child: const Icon(Icons.add, color: Colors.white),
       ),

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:test_app/services/export_service.dart';
+import 'package:test_app/services/sync_update_service.dart';
 import 'case_list_tab.dart';
 import 'sites_list_screen.dart';
 import '../services/user_service.dart';
@@ -13,6 +15,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  bool getUpdatesState = true;
 
   @override
   void initState() {
@@ -33,10 +36,14 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     );
   }
 
+  void _download(){
+    ExportService().exportUnsyncedData();
+  }
+
   @override
   Widget build(BuildContext context) {
     final currentUser = userService.currentUser;
-    
+
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -66,14 +73,38 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          Switch(
+              value: getUpdatesState,
+              onChanged: (value){
+                setState(() {
+                  getUpdatesState = value;
+                  // SyncUpdateService.updateApp(getUpdatesState);
+                  SyncUpdateService.instance.updateApp(getUpdatesState);
+
+                });
+              }
+          ),
           PopupMenuButton<String>(
             onSelected: (value) {
               if (value == 'logout') {
                 _logout();
+              }else if (value == 'download'){
+                _download();
               }
             },
             icon: const Icon(Icons.more_vert),
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'download',
+                child: Row(
+                  children: [
+                    Icon(Icons.download, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Download', style: TextStyle(color: Colors.blue)),
+                  ],
+                ),
+              ),
+
               const PopupMenuItem(
                 value: 'logout',
                 child: Row(

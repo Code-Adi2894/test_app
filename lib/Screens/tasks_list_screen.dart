@@ -1,9 +1,14 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:test_app/Screens/add_task_detail_dialog.dart';
 import '../Screens/tasks_detail_screen.dart';
 import 'package:test_app/main.dart';
 import '../entities.dart';
 import '../objectbox.g.dart';
+import '../widgets/change_notifier.dart';
 
 final taskBox = objectbox.store.box<Task>();
 
@@ -21,8 +26,34 @@ class TasksListScreen extends StatefulWidget {
   State<TasksListScreen> createState() => _TasksListScreenState();
 }
 
+
 class _TasksListScreenState extends State<TasksListScreen> {
   bool isCompleted = false;
+  bool _isOnline = true;
+  late final Connectivity _connectivity;
+  late StreamSubscription<List<ConnectivityResult>>  _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // _connectivity = Connectivity();
+    // _checkConnectivity();
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((List<ConnectivityResult> result) {
+      // Received changes in available connectivity types!
+      setState(() {
+        _isOnline = result.contains(ConnectivityResult.wifi);
+        print('source (updated): $_isOnline');
+      });
+    });
+  }
+
+  Future<void> _checkConnectivity() async {
+    final result = await _connectivity.checkConnectivity();
+    setState(() {
+      _isOnline = result != ConnectivityResult.none;
+      print('source (after check): $_isOnline');
+    });
+  }
 
   void openAddTaskDialog(BuildContext context) async {
     TextEditingController taskTitlecontroller = TextEditingController();
@@ -31,6 +62,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
 
   @override
   Widget build(BuildContext context) {
+    var connectionStatus = context.watch<AppStore>().isConnected;
     late Task selectedTask;
     return Scaffold(
         appBar: AppBar(title: Text("Tasks list for ${widget.case_.name}")),
@@ -57,7 +89,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(builder:
-                              (context) => TaskDetailScreen(task: selectedTask)
+                              (context) => TaskDetailScreen(task: selectedTask, cases: widget.case_)
                             )
                           );
                         }
@@ -66,7 +98,7 @@ class _TasksListScreenState extends State<TasksListScreen> {
                   }
               )),
               ElevatedButton(
-                  onPressed: () => showCustomDialog(context, widget.case_),
+                  onPressed: () => showCustomDialog(context, widget.case_, connectionStatus),
                   child: Text("Add task")
               )
             ]

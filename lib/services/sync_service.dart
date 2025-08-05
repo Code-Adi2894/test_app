@@ -163,6 +163,20 @@ class SyncService {
     }
   }
 
+  Future<bool> syncPendingTask() async{
+      try{
+        var unsyncedTasks = getPendingTasks();
+        for (Task task in unsyncedTasks){
+          task.isSynced = true;
+          taskBox.put(task);
+        }
+        return true;
+      }catch(err){
+        print('Task sync failed: $err');
+        return false;
+      }
+  }
+
   // Sync specific task
   Future<bool> syncTask(Task task) async {
     if (!await isOnline()) {
