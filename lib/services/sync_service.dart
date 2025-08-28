@@ -49,8 +49,8 @@ class SyncService {
   void markCaseAsSynced(Cases case_) {
     case_.isSynced = true;
     case_.updatedAt = DateTime.now();
-    case_.lastSyncedAt = DateTime.now();
-    case_.syncStatus = 'synced';
+    // case_.lastSyncedAt = DateTime.now();
+    case_.isSynced = true;
     casesBox.put(case_);
   }
 
@@ -119,8 +119,8 @@ class SyncService {
       }
       for (var case_ in pendingCases) {
         case_.isSynced = true;
-        case_.lastSyncedAt = syncTime;
-        case_.syncStatus = 'synced';
+        // case_.lastSyncedAt = syncTime;
+        case_.isSynced = true;
         case_.updatedAt = syncTime;
         casesBox.put(case_);
       }
@@ -143,12 +143,12 @@ class SyncService {
       final syncTime = DateTime.now();
 
       case_.isSynced = true;
-      case_.lastSyncedAt = syncTime;
-      case_.syncStatus = 'synced';
+      // case_.lastSyncedAt = syncTime;
+      case_.isSynced = true;
       case_.updatedAt = syncTime;
 
       // Sync all tasks in this case
-      final tasks = taskBox.query(Task_.cases.equals(case_.id)).build().find();
+      final tasks = taskBox.query(Task_.cases.equals(case_.dbId)).build().find();
       for (var task in tasks) {
         task.isSynced = true;
         task.updatedAt = syncTime;

@@ -20,7 +20,7 @@ class SiteService {
   }
 
   // Create a new site
-  Site createSite(String name, {String? address, String? description}) {
+  Site createSite(String id, String name, {String? address, String? description}) {
     // Check if site with same name already exists
     final query = siteBox.query(Site_.name.equals(name)).build();
     final existingSites = query.find();
@@ -32,14 +32,16 @@ class SiteService {
 
     // Create new site
     final newSite = Site(
+      id: id,
       name: name,
       address: address,
       description: description,
+      isSynced: true
     );
 
     // Store the site and get the ID
     final siteId = siteBox.put(newSite);
-    newSite.id = siteId;
+    newSite.dbId = siteId;
     
     print('Site created successfully with ID: $siteId');
     print('Total sites in database: ${getSiteCount()}');

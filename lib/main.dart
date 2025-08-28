@@ -1,4 +1,6 @@
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:test_app/Screens/login_screen.dart';
@@ -9,6 +11,7 @@ import 'package:test_app/services/sync_client_manager.dart';
 import 'package:test_app/services/sync_update_service.dart';
 import 'package:test_app/widgets/change_notifier.dart';
 import 'objectbox.dart';
+import 'objectbox.g.dart';
 import 'services/user_service.dart';
 
 late ObjectBox objectbox;
@@ -51,23 +54,24 @@ Future<void> main() async {
 
   objectbox = await ObjectBox.create();
   
-  // var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
-  // // var syncServerIp = "127.0.0.1"; for physcial device testing
-  // SyncClient syncClient = Sync.client(
-  //   objectbox.store,
-  //   'ws://$syncServerIp:9999',
-  //   SyncCredentials.none(),
-  // );
+  var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
+  // var syncServerIp = "127.0.0.1"; for physcial device testing
+  var ec2ServerIp = '54.88.1.144';
+  SyncClient syncClient = Sync.client(
+    objectbox.store,
+    'ws://$syncServerIp:9999',
+    SyncCredentials.none(),
+  );
 
 
-  // try {
-  //   syncClient.setRequestUpdatesMode(SyncRequestUpdatesMode.manual);
-  //   final syncService = SyncUpdateService(syncClient: syncClient);
-  //   syncClient.start();
-  //   print("Sync client started");
-  // } catch (e) {
-  //   print("Sync client error: $e");
-  // }
+  try {
+    syncClient.setRequestUpdatesMode(SyncRequestUpdatesMode.manual);
+    // final syncService = SyncUpdateService(syncClient: syncClient);
+    syncClient.start();
+    print("Sync client started");
+  } catch (e) {
+    print("Sync client error: $e");
+  }
 
 
   // Debug: Print user information
@@ -78,10 +82,10 @@ Future<void> main() async {
   final appStore = AppStore();
   CheckConnectivityService().listenToConnectivity(appStore);
 
-  final syncManager = SyncClientManager();
-  await syncManager.initialize(true);
+  // final syncManager = SyncClientManager();
+  // await syncManager.initialize(true);
 
-  SyncUpdateService.init(manager: syncManager);
+  // SyncUpdateService.init(manager: syncManager);
 
 
   runApp(

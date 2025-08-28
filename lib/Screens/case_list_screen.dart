@@ -335,7 +335,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
       if (!ok) throw Exception('Sync failed');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Case "${c.name}" synced!'),
+          content: Text('Case "${c.title}" synced!'),
           backgroundColor: const Color(0xFF28A745),
           duration: const Duration(seconds: 2),
         ),
@@ -548,7 +548,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
                                           children: [
                                             Expanded(
                                               child: Text(
-                                                c.name,
+                                                c.title,
                                                 style: const TextStyle(
                                                   fontSize: 20,
                                                   fontWeight: FontWeight.bold,

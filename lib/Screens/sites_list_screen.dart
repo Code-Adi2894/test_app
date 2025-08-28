@@ -41,7 +41,7 @@ class _SitesListScreenState extends State<SitesListScreen> {
           ),
           TextButton(
             onPressed: () {
-              siteService.deleteSite(site.id);
+              siteService.deleteSite(site.dbId);
               Navigator.of(context).pop();
               // No need to reload, the stream will automatically update
             },

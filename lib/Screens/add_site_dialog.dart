@@ -16,6 +16,7 @@ class AddSiteDialog extends StatefulWidget {
 
 class _AddSiteDialogState extends State<AddSiteDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _idController = TextEditingController();
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -38,6 +39,7 @@ class _AddSiteDialogState extends State<AddSiteDialog> {
 
     try {
       final site = siteService.createSite(
+        _idController.text.trim(),
         _nameController.text.trim(),
         address: _addressController.text.trim().isEmpty 
             ? null 

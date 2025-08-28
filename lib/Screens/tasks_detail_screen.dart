@@ -17,7 +17,7 @@ final taskImageBox = objectbox.store.box<TaskImage>();
 
 // Stream to watch for changes to a specific task
 Stream<Task?> getTaskStream(int taskId) {
-  return taskBox.query(Task_.id.equals(taskId)).watch(triggerImmediately: true).map((query) {
+  return taskBox.query(Task_.dbId.equals(taskId)).watch(triggerImmediately: true).map((query) {
     final tasks = query.find();
     return tasks.isNotEmpty ? tasks.first : null;
   });
@@ -227,7 +227,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: StreamBuilder<Task?>(
-          stream: getTaskStream(widget.task.id),
+          stream: getTaskStream(widget.task.dbId),
           builder: (context, snapshot) {
             final task = snapshot.data ?? widget.task;
             return Text(
@@ -271,7 +271,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
           // const OfflineIndicator(),
           Expanded(
             child: StreamBuilder<Task?>(
-              stream: getTaskStream(widget.task.id),
+              stream: getTaskStream(widget.task.dbId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -509,12 +509,12 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                                         padding: const EdgeInsets.symmetric(horizontal: 4),
                                         child: ClipRRect(
                                           borderRadius: BorderRadius.circular(8),
-                                          child: Image.memory(
-                                            Uint8List.fromList(image.imageBytes),
-                                            width: 80,
-                                            height: 80,
-                                            fit: BoxFit.cover,
-                                          ),
+                                          // child: Image.memory(
+                                          //   Uint8List.fromList(image.imageBytes),
+                                          //   width: 80,
+                                          //   height: 80,
+                                          //   fit: BoxFit.cover,
+                                          // ),
                                         ),
                                       );
                                     }

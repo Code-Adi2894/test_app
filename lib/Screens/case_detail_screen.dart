@@ -83,7 +83,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: Text(
-          widget.case_.name,
+          widget.case_.title,
           style: const TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -136,7 +136,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    widget.case_.name,
+                                    widget.case_.title,
                                     style: const TextStyle(
                                       fontSize: 20,
                                       fontWeight: FontWeight.bold,
@@ -199,14 +199,14 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                             ),
                           ),
                         const SizedBox(height: 8),
-                        if (widget.case_.isSynced)
-                          Text(
-                            'Last synced: ${widget.case_.lastSyncedAt?.toString().substring(0, 19) ?? 'Never'}',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF9E9E9E),
-                            ),
-                          ),
+                        // if (widget.case_.isSynced)
+                        //   Text(
+                        //     'Last synced: ${widget.case_.lastSyncedAt?.toString().substring(0, 19) ?? 'Never'}',
+                        //     style: const TextStyle(
+                        //       fontSize: 12,
+                        //       color: Color(0xFF9E9E9E),
+                        //     ),
+                        //   ),
                       ],
                     ),
                   ),
@@ -226,7 +226,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                       ),
                       const Spacer(),
                       StreamBuilder<List<Task>>(
-                        stream: getTasksForCase(widget.case_.id),
+                        stream: getTasksForCase(widget.case_.dbId),
                         builder: (context, snapshot) {
                           final taskCount = snapshot.data?.length ?? 0;
                           return Text(
@@ -244,7 +244,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
                 // Tasks List
                 Expanded(
                   child: StreamBuilder<List<Task>>(
-                    stream: getTasksForCase(widget.case_.id),
+                    stream: getTasksForCase(widget.case_.dbId),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(
@@ -489,7 +489,7 @@ class _CaseDetailScreenState extends State<CaseDetailScreen> {
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Case "${widget.case_.name}" synchronized successfully!'),
+            content: Text('Case "${widget.case_.title}" synchronized successfully!'),
             backgroundColor: const Color(0xFF28A745),
             duration: const Duration(seconds: 2),
           ),

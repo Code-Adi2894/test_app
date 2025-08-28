@@ -8,6 +8,7 @@ import '../services/sync_service.dart';
 final taskBox = objectbox.store.box<Task>();
 
 void showCustomDialog(BuildContext context, Cases case_, bool connectionStatus) {
+  TextEditingController idController = TextEditingController();
   TextEditingController titleController = TextEditingController();
   TextEditingController descriptionController = TextEditingController();
   TextEditingController reviewNotesController = TextEditingController();
@@ -31,6 +32,13 @@ void showCustomDialog(BuildContext context, Cases case_, bool connectionStatus) 
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  TextField(
+                    controller: idController,
+                    decoration: const InputDecoration(
+                      labelText: 'Id',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
                   TextField(
                     controller: titleController,
                     decoration: const InputDecoration(
@@ -107,6 +115,7 @@ void showCustomDialog(BuildContext context, Cases case_, bool connectionStatus) 
               ),
               ElevatedButton(
                 onPressed: () async {
+                  final id = idController.text.trim();
                   final title = titleController.text.trim();
                   final description = descriptionController.text.trim();
                   
@@ -121,14 +130,20 @@ void showCustomDialog(BuildContext context, Cases case_, bool connectionStatus) 
                   }
 
                   final task = Task(
+                    id: id,
                     title: title, 
                     description: description, 
                     reviewNotes: reviewNotesController.text.trim(),
                     isCompleted: isCompleted, 
                     priority: priority,
                     isSynced: false, // Mark as needing sync
+                    createdBy: userService.getCurrentUserEmail(),
                     updatedAt: DateTime.now(),
                     updatedBy: userService.getCurrentUserEmail(), // Use actual user email
+                    isLiveSyncEnabled: true,
+                    caseId: case_.title,
+                    siteId: case_.site.target!.name,
+                    images: []
                   );
 
                   try {

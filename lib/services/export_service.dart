@@ -58,11 +58,11 @@ class ExportService {
       final casesList = cases.map((case_) =>
       {
         'id': case_.id,
-        'name': case_.name,
+        'name': case_.title,
         'description': case_.description,
         'isSynced':case_.isSynced,
         'createdAt': case_.createdAt.toIso8601String(),
-        'lastSynced': case_.lastSyncedAt?.toIso8601String(),
+        // 'lastSynced': case_.lastSyncedAt?.toIso8601String(),
         'updatedAt': case_.updatedAt.toIso8601String(),
       }).toList();
       return casesList;

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:test_app/services/user_service.dart';
 import '../entities.dart';
 import '../services/site_service.dart';
 import '../main.dart';
@@ -17,6 +18,7 @@ class AddCaseDialog extends StatefulWidget {
 
 class _AddCaseDialogState extends State<AddCaseDialog> {
   final _formKey = GlobalKey<FormState>();
+  final _idController = TextEditingController();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   int? _selectedSiteId;
@@ -31,6 +33,7 @@ class _AddCaseDialogState extends State<AddCaseDialog> {
 
   @override
   void dispose() {
+    _idController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
     super.dispose();
@@ -58,14 +61,19 @@ class _AddCaseDialogState extends State<AddCaseDialog> {
 
       // Create new case with proper offline-first sync status
       final newCase = Cases(
-        name: _titleController.text.trim(),
+        id: _idController.text.trim(),
+        title: _titleController.text.trim(),
         description: _descriptionController.text.trim().isEmpty 
             ? null 
             : _descriptionController.text.trim(),
         isSynced: false, // Mark as needing sync for offline-first
-        syncStatus: 'pending', // Mark as pending sync
+        status: "Open",
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        isLiveSyncEnabled: true,
+        createdBy: userService.getCurrentUserEmail(),
+        updatedBy: userService.getCurrentUserEmail(),
+        siteId: selectedSite.name
       );
 
       // Set the site relationship
@@ -73,7 +81,7 @@ class _AddCaseDialogState extends State<AddCaseDialog> {
 
       // Save the case
       final caseId = objectbox.store.box<Cases>().put(newCase);
-      newCase.id = caseId;
+      newCase.dbId = caseId;
 
       widget.onCaseAdded(newCase);
     } catch (e) {

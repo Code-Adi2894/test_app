@@ -65,12 +65,12 @@ class _TasksListScreenState extends State<TasksListScreen> {
     var connectionStatus = context.watch<AppStore>().isConnected;
     late Task selectedTask;
     return Scaffold(
-        appBar: AppBar(title: Text("Tasks list for ${widget.case_.name}")),
+        appBar: AppBar(title: Text("Tasks list for ${widget.case_.title}")),
         body: Column(
             children: [
               Expanded(
                   child: StreamBuilder<List<Task>>(
-                  stream: getTasksForCase(widget.case_.id),
+                  stream: getTasksForCase(widget.case_.dbId),
                   builder: (context, snapshot){
                     if (snapshot.connectionState == ConnectionState.waiting) {
                       return const Center(child: CircularProgressIndicator());
