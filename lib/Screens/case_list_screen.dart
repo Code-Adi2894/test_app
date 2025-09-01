@@ -453,7 +453,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
             icon: const Icon(Icons.add, color: Color(0xFF2196F3)),
             tooltip: 'Add Case',
           ),
-          if (_isOnline)
+          // if (_isOnline)
             IconButton(
               onPressed: _isSyncing ? null : _syncData,
               icon: _isSyncing
@@ -465,7 +465,7 @@ class _CaseListScreenState extends State<CaseListScreen> {
                   : const Icon(Icons.sync, color: Color(0xFF2196F3)),
               tooltip: 'Sync All Data',
             ),
-          if (_isOnline)
+          // if (_isOnline)
             IconButton(
               onPressed: _isSyncing ? null : _showSyncOptions,
               icon: const Icon(Icons.more_vert, color: Color(0xFF2196F3)),

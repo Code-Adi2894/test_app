@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/services/export_service.dart';
+import 'package:test_app/services/sync_client_manager.dart';
 import 'package:test_app/services/sync_update_service.dart';
 import 'case_list_tab.dart';
 import 'sites_list_screen.dart';
@@ -15,7 +16,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  bool getUpdatesState = true;
+  bool getUpdatesState = false;
 
   @override
   void initState() {
@@ -78,9 +79,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               onChanged: (value){
                 setState(() {
                   getUpdatesState = value;
-                  // SyncUpdateService.updateApp(getUpdatesState);
-                  SyncUpdateService.instance.updateApp(getUpdatesState);
-
+                  SyncClientManager.instance?.updateApp(value);
                 });
               }
           ),

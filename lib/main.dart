@@ -16,6 +16,7 @@ import 'services/user_service.dart';
 
 late ObjectBox objectbox;
 
+
 // Global connectivity service
 class ConnectivityService {
   static final ConnectivityService _instance = ConnectivityService._internal();
@@ -53,21 +54,11 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   objectbox = await ObjectBox.create();
-  
-  var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
-  // var syncServerIp = "127.0.0.1"; for physcial device testing
-  var ec2ServerIp = '54.88.1.144';
-  SyncClient syncClient = Sync.client(
-    objectbox.store,
-    'ws://$syncServerIp:9999',
-    SyncCredentials.none(),
-  );
+  final syncManager = SyncClientManager.init(objectbox);
 
 
   try {
-    syncClient.setRequestUpdatesMode(SyncRequestUpdatesMode.manual);
-    // final syncService = SyncUpdateService(syncClient: syncClient);
-    syncClient.start();
+    syncManager?.initialize(false);
     print("Sync client started");
   } catch (e) {
     print("Sync client error: $e");

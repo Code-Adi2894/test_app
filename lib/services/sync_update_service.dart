@@ -1,5 +1,5 @@
 import 'package:test_app/services/sync_client_manager.dart';
-
+import '../objectbox.g.dart';
 
 class SyncUpdateService {
   static SyncUpdateService? _instance;
@@ -8,7 +8,7 @@ class SyncUpdateService {
 
   // // Private constructor
   SyncUpdateService._internal(this.syncClientManager);
-  //
+
   // // Factory constructor to initialize once
   // factory SyncUpdateService({required SyncClient syncClient}) {
   //   return _instance ??= SyncUpdateService._internal(syncClient);
@@ -30,8 +30,7 @@ class SyncUpdateService {
 
   void updateApp(status){
     print("App sync: $status");
-    // sync all app datat
+    // sync all app dataset
     syncClientManager.initialize(status);
   }
-
 }

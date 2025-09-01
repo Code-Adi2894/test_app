@@ -7,7 +7,6 @@ import '../services/user_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../services/sync_service.dart';
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:image_picker/image_picker.dart';
 
 import '../widgets/change_notifier.dart';

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/main.dart';
+import 'package:test_app/services/speed_testing_service.dart';
 import '../entities.dart';
 import '../services/user_service.dart';
 import 'home_screen.dart';
@@ -56,6 +57,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  void uploadBulkData() async {
+    try{
+      _isLoading = true;
+      print("Uploading data...");
+      SpeedTestingService().testUploadSpeed();
+    }catch(e){
+      print("Error while uploading: $e");
+    }finally{
+      _isLoading = false;
+    }
+}
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
@@ -77,7 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: SafeArea(
+      body: Column (
+        children: [
+        SafeArea(
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
@@ -246,6 +261,36 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
       ),
+          const SizedBox(height: 32),
+          // Login Button
+          SizedBox(
+            height: 48,
+            child: ElevatedButton(
+              onPressed: _isLoading ? null : uploadBulkData,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2196F3),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              child: _isLoading
+                  ? const SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+                  : const Text('Upload data'),
+            ),
+          ),
+      ])
     );
   }
 } 
