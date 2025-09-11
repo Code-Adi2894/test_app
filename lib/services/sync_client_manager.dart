@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:test_app/services/speed_testing_service.dart';
 
-import '../main.dart';
 import '../objectbox.dart';
 import '../objectbox.g.dart';
 
@@ -31,17 +30,15 @@ class SyncClientManager {
   // create sync client with neccessary parameters
   Future<void> initialize(toggleStatus) async {
 
-    if (objectbox == null) {
-      objectbox = await ObjectBox.create();
-    } else {
-      debugPrint("✅ Reusing existing ObjectBox store.");
-    }
-    stop();
+    debugPrint("✅ Reusing existing ObjectBox store.");
+      stop();
 
     var syncServerIp = Platform.isAndroid ? "10.0.2.2" : "127.0.0.1";
+    var ec2ServerIp = "52.1.186.253";
     _syncClient = Sync.client(
       objectbox.store,
-      'ws://$syncServerIp:9999',
+      // 'ws://$syncServerIp:9999',
+      'ws://$ec2ServerIp:9999',
       SyncCredentials.none(),
     );
 
@@ -79,7 +76,7 @@ class SyncClientManager {
   void updateApp(status){
     print("App sync: $status");
     // sync all app dataset
-    this.initialize(status);
+    initialize(status);
   }
 
   /// Stop the sync client

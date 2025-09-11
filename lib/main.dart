@@ -1,5 +1,4 @@
 
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -8,10 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:test_app/services/check_connectivity_service.dart';
 import 'package:test_app/services/sync_client_manager.dart';
-import 'package:test_app/services/sync_update_service.dart';
 import 'package:test_app/widgets/change_notifier.dart';
 import 'objectbox.dart';
-import 'objectbox.g.dart';
 import 'services/user_service.dart';
 
 late ObjectBox objectbox;

@@ -13,7 +13,7 @@ import '../objectbox.g.dart';
 class SpeedTestingService{
   void testUploadSpeed() async{
     final directory = await getApplicationDocumentsDirectory();
-    final file = File('${directory.path}/massive_dataset_10sites.json');
+    final file = File('${directory.path}/massive_dataset_20sites.json');
 
     if (!await file.exists()) {
       debugPrint('❌ No massive_dataset.json found.');
@@ -63,7 +63,7 @@ class SpeedTestingService{
 
     try {
       // Trigger sync
-      await syncClient.requestUpdates(subscribeForFuturePushes: true);
+      syncClient.requestUpdates(subscribeForFuturePushes: true);
       // Wait for completion event
       await completer.future;
       return stopwatch.elapsed;

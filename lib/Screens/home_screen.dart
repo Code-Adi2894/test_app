@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:test_app/services/export_service.dart';
 import 'package:test_app/services/sync_client_manager.dart';
-import 'package:test_app/services/sync_update_service.dart';
 import 'case_list_tab.dart';
 import 'sites_list_screen.dart';
 import '../services/user_service.dart';

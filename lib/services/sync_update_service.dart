@@ -1,5 +1,4 @@
 import 'package:test_app/services/sync_client_manager.dart';
-import '../objectbox.g.dart';
 
 class SyncUpdateService {
   static SyncUpdateService? _instance;
